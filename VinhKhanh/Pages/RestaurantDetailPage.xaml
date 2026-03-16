@@ -31,7 +31,38 @@
                     <Label Text="Món Đặc Biệt" FontSize="16" FontAttributes="Bold"/>
                     <Label x:Name="SignatureDishLabel" FontSize="14" FontAttributes="Bold"/>
                     <Label x:Name="SignatureDishStoryLabel" FontSize="12" LineBreakMode="WordWrap"/>
-                    <Button x:Name="PlaySignatureButton" Text="🔊 Nghe Câu Chuyện" Clicked="OnPlaySignatureDish" Margin="0,8,0,0"/>
+
+                    <!-- Chọn ngôn ngữ audio kiểu 2 option -->
+                    <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
+                        <Button x:Name="ViOptionButton"
+                                Text="🇻🇳 Tiếng Việt"
+                                Clicked="OnAudioOptionClicked"
+                                CommandParameter="vi"
+                                BackgroundColor="#FF6B35"
+                                TextColor="White"
+                                Padding="14,10"
+                                CornerRadius="10"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                BorderWidth="0"/>
+
+                        <Button x:Name="EnOptionButton"
+                                Text="🇬🇧 English"
+                                Clicked="OnAudioOptionClicked"
+                                CommandParameter="en"
+                                BackgroundColor="#E0E0E0"
+                                TextColor="#1F1F1F"
+                                Padding="14,10"
+                                CornerRadius="10"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                BorderWidth="0"/>
+                    </HorizontalStackLayout>
+
+                    <Button x:Name="PlaySignatureButton"
+                            Text="🔊 Nghe Câu Chuyện"
+                            Clicked="OnPlaySignatureDish"
+                            Margin="0,8,0,0"/>
                 </VerticalStackLayout>
             </Frame>
 
