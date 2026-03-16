@@ -44,12 +44,11 @@ public partial class ExplorePage : ContentPage
 
 	private async void OnViewDetailsClicked(object sender, EventArgs e)
 	{
-		var button = sender as Button;
-		var restaurant = button?.CommandParameter as Restaurant;
-
-		if (restaurant != null)
+		if (sender is not Button { CommandParameter: Restaurant restaurant })
 		{
-			await Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioService));
+			return;
 		}
+
+		await Shell.Current.Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioService));
 	}
 }
