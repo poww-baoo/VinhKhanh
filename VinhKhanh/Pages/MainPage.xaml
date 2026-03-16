@@ -1,251 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:local="clr-namespace:VinhKhanh.Models"
              x:Class="VinhKhanh.Pages.MainPage"
              Title=""
              Padding="0"
-             BackgroundColor="#FAFAFA">
-
-    <Grid RowDefinitions="Auto,*,Auto,Auto" RowSpacing="0">
+             BackgroundColor="#FFFFFF">
+    <Grid RowDefinitions="*,Auto" RowSpacing="0">
         
-        <!-- Android Status Bar Style Header -->
-        <StackLayout Grid.Row="0" Padding="16,8" BackgroundColor="#FFFFFF" Spacing="0">
-
-            <!-- Top App Bar -->
-            <HorizontalStackLayout Spacing="12" Padding="0,8">
-                <Label Text="Phố Ẩm Thực" 
-                       FontSize="20" 
-                       FontAttributes="Bold"
-                       TextColor="#1F1F1F"
-                       VerticalOptions="Center"/>
-                <Label Text="Vĩnh Khánh" 
-                       FontSize="20" 
-                       FontAttributes="Bold"
-                       TextColor="#FF6B35"
-                       VerticalOptions="Center"
-                       HorizontalOptions="FillAndExpand"/>
-                <Button Text="🔔" 
-                       BackgroundColor="Transparent"
-                       TextColor="#1F1F1F"
-                       Padding="8"
-                       FontSize="18"
-                       BorderWidth="0"
-                       CornerRadius="20"
-                       WidthRequest="40"
-                       HeightRequest="40"/>
-            </HorizontalStackLayout>
-
-            <!-- Search Bar -->
-            <Frame CornerRadius="12" Padding="12,10" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#F5F5F5" Margin="0,8,0,0">
-                <HorizontalStackLayout Spacing="12">
-                    <Label Text="🔍" FontSize="18" VerticalOptions="Center"/>
-                    <Entry x:Name="LocationLabel"
-                           Placeholder="Tìm kiếm quán ăn..." 
-                           FontSize="14" 
-                           BackgroundColor="Transparent" 
-                           HorizontalOptions="FillAndExpand"
-                           IsReadOnly="True"
-                           TextColor="#1F1F1F"
-                           PlaceholderColor="#999999"/>
-                </HorizontalStackLayout>
-            </Frame>
-
-            <!-- Location Info -->
-            <HorizontalStackLayout Spacing="6" Margin="0,12,0,0">
-                <Label Text="📍" FontSize="14"/>
-                <Label Text="Vị trí hiện tại:" FontSize="12" TextColor="#666666" VerticalOptions="Center"/>
-                <Label Text="Quận 1, TP. HCM" FontSize="12" FontAttributes="Bold" TextColor="#1F1F1F" VerticalOptions="Center"/>
-            </HorizontalStackLayout>
-        </StackLayout>
-
-        <!-- Main Content Area with Swipe View for Tab Navigation -->
-        <SwipeView Grid.Row="1" x:Name="ContentSwipeView" BackgroundColor="#FAFAFA">
-            <ScrollView>
-                <VerticalStackLayout x:Name="ExplorePage" Padding="0" Spacing="0">
-
-                    <!-- Category Filter Chips -->
-                    <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
-                        <Label Text="Danh mục" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F" Margin="0,0,0,8"/>
-                        <CollectionView x:Name="FilterChipsCollection" 
-                                      SelectionMode="Single"
-                                      HeightRequest="45">
-                            <CollectionView.ItemsLayout>
-                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate x:DataType="local:Category">
-                                    <Frame CornerRadius="20" 
-                                           Padding="14,8" 
-                                           BorderColor="#E0E0E0" 
-                                           HasShadow="False"
-                                           BackgroundColor="#F5F5F5">
-                                        <Label Text="{Binding Name}" FontSize="12" TextColor="#1F1F1F"/>
-                                    </Frame>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-                    </StackLayout>
-
-                    <!-- Section Divider -->
-                    <BoxView HeightRequest="1" BackgroundColor="#E0E0E0"/>
-
-                    <!-- Restaurants Header -->
-                    <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
-                        <HorizontalStackLayout HorizontalOptions="FillAndExpand">
-                            <Label Text="Quán ăn gần bạn" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
-                            <Frame CornerRadius="12" Padding="8,4" BorderColor="Transparent" HasShadow="False" BackgroundColor="#FFF3E0" VerticalOptions="Center">
-                                <Label Text="Sắp xếp ↕️" FontSize="11" TextColor="#FF6B35"/>
-                            </Frame>
-                        </HorizontalStackLayout>
-                    </StackLayout>
-
-                    <!-- Restaurants List -->
-                    <CollectionView x:Name="RestaurantsCollection" 
-                                  SelectionMode="Single"
-                                  Margin="0">
-                        <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="0"/>
-                        </CollectionView.ItemsLayout>
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="local:Restaurant">
-                                <!-- Restaurant Card -->
-                                <StackLayout Spacing="0" BackgroundColor="Transparent" Padding="0">
-                                    <Frame CornerRadius="0" Padding="16" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#FFFFFF" Margin="0">
-                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="80,*,Auto" ColumnSpacing="12" RowSpacing="8">
-
-                                            <!-- Restaurant Image/Icon -->
-                                            <Frame Grid.Row="0" Grid.RowSpan="4" Grid.Column="0" 
-                                                   CornerRadius="8" Padding="0" BorderColor="#E0E0E0" 
-                                                   HasShadow="False" BackgroundColor="#F5F5F5" WidthRequest="80" HeightRequest="80">
-                                                <Label Text="🍲" FontSize="36" HorizontalOptions="Center" VerticalOptions="Center"/>
-                                            </Frame>
-
-                                            <!-- Restaurant Name and Rating -->
-                                            <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
-                                                <Label Text="{Binding Name}" 
-                                                       FontSize="15" 
-                                                       FontAttributes="Bold"
-                                                       TextColor="#1F1F1F"
-                                                       LineBreakMode="TailTruncation"
-                                                       MaxLines="1"
-                                                       VerticalOptions="Center"
-                                                       HorizontalOptions="FillAndExpand"/>
-                                                <HorizontalStackLayout Grid.Column="2" Grid.Row="0" Spacing="2" VerticalOptions="Center">
-                                                    <Label Text="⭐" FontSize="12"/>
-                                                    <Label Text="{Binding Rating, StringFormat='{0:F1}'}" FontSize="12" TextColor="#FF6B35" FontAttributes="Bold"/>
-                                                </HorizontalStackLayout>
-                                            </HorizontalStackLayout>
-
-                                            <!-- Distance and Time -->
-                                            <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="12">
-                                                <Label Text="📍 0.5 km" FontSize="11" TextColor="#999999"/>
-                                                <Label Text="⏱️ 5-10 phút" FontSize="11" TextColor="#999999"/>
-                                            </HorizontalStackLayout>
-
-                                            <!-- Highlights -->
-                                            <Label Grid.Row="2" Grid.Column="1" 
-                                                   Text="{Binding Highlights}" 
-                                                   FontSize="11" 
-                                                   TextColor="#666666" 
-                                                   LineBreakMode="TailTruncation" 
-                                                   MaxLines="2"/>
-
-                                            <!-- Action Buttons -->
-                                            <HorizontalStackLayout Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,4,0,0">
-                                                <Button Text="🔊 Nghe" 
-                                                       Clicked="OnPlayAudioClicked" 
-                                                       CommandParameter="{Binding .}" 
-                                                       HorizontalOptions="FillAndExpand"
-                                                       BackgroundColor="#FF6B35"
-                                                       TextColor="White"
-                                                       Padding="8,6"
-                                                       CornerRadius="6"
-                                                       FontSize="11"
-                                                       BorderWidth="0"/>
-                                                <Button Text="📋 Chi tiết" 
-                                                       Clicked="OnViewDetailsClicked" 
-                                                       CommandParameter="{Binding .}"
-                                                       HorizontalOptions="FillAndExpand"
-                                                       BackgroundColor="#F5F5F5"
-                                                       TextColor="#1F1F1F"
-                                                       Padding="8,6"
-                                                       CornerRadius="6"
-                                                       FontSize="11"
-                                                       BorderWidth="0"/>
-                                            </HorizontalStackLayout>
-                                        </Grid>
-                                    </Frame>
-
-                                    <!-- Divider -->
-                                    <BoxView HeightRequest="0.5" BackgroundColor="#E0E0E0" Margin="16,0"/>
-                                </StackLayout>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-
-                    <!-- TrackAsia Map -->
-                    <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="8">
-                        <Label Text="Bản đồ khu vực"
-                               FontSize="14"
-                               FontAttributes="Bold"
-                               TextColor="#1F1F1F" />
-                        <Frame CornerRadius="12"
-                               Padding="0"
-                               BorderColor="#E0E0E0"
-                               HasShadow="False"
-                               BackgroundColor="#F5F5F5"
-                               HeightRequest="260">
-                            <WebView x:Name="MapWebView"
-                                     HeightRequest="260" />
-                        </Frame>
-                    </StackLayout>
-                </VerticalStackLayout>
-            </ScrollView>
-        </SwipeView>
-
-        <!-- Content Placeholder for Other Tabs -->
-        <StackLayout Grid.Row="1" x:Name="SavedPage" BackgroundColor="#FFFFFF" Padding="24" Spacing="12" IsVisible="False">
-            <Label Text="📍 Đã Lưu" FontSize="24" FontAttributes="Bold" TextColor="#1F1F1F" HorizontalOptions="Center" Margin="0,24,0,0"/>
-            <Label Text="Chưa có quán ăn nào được lưu" FontSize="14" TextColor="#999999" HorizontalOptions="Center" Margin="0,12,0,0"/>
-        </StackLayout>
-
-        <StackLayout Grid.Row="1" x:Name="TrackingPage" BackgroundColor="#FFFFFF" Padding="24" Spacing="12" IsVisible="False">
-            <Label Text="🎯 Theo Dõi" FontSize="24" FontAttributes="Bold" TextColor="#1F1F1F" HorizontalOptions="Center" Margin="0,24,0,0"/>
-            <Label Text="Kích hoạt theo dõi để bắt đầu" FontSize="14" TextColor="#999999" HorizontalOptions="Center" Margin="0,12,0,0"/>
-            <Label x:Name="TrackingStatusLabel" Text="Trạng thái: Chưa bắt đầu" FontSize="12" TextColor="#666666" HorizontalOptions="Center" Margin="0,24,0,0"/>
-        </StackLayout>
-
-        <StackLayout Grid.Row="1" x:Name="SettingsPage" BackgroundColor="#FFFFFF" Padding="24" Spacing="12" IsVisible="False">
-            <Label Text="⚙️ Cài đặt" FontSize="24" FontAttributes="Bold" TextColor="#1F1F1F" HorizontalOptions="Center" Margin="0,24,0,0"/>
-            <HorizontalStackLayout Spacing="8" Margin="0,12,0,0">
-                <Label Text="Ngôn ngữ:" FontSize="14" TextColor="#1F1F1F" VerticalOptions="Center"/>
-                <Button Text="🇻🇳 Tiếng Việt" Clicked="OnLanguageChanged" CommandParameter="vi" HorizontalOptions="FillAndExpand" BackgroundColor="#FF6B35" TextColor="White" Padding="8,6" CornerRadius="6" FontSize="11" BorderWidth="0"/>
-                <Button Text="🇬🇧 English" Clicked="OnLanguageChanged" CommandParameter="en" HorizontalOptions="FillAndExpand" BackgroundColor="#E0E0E0" TextColor="#1F1F1F" Padding="8,6" CornerRadius="6" FontSize="11" BorderWidth="0"/>
-            </HorizontalStackLayout>
-        </StackLayout>
+        <!-- Content Container -->
+        <Grid Grid.Row="0" x:Name="ContentFrame" Padding="0"/>
 
         <!-- Bottom Navigation Bar -->
-        <Grid Grid.Row="3" ColumnDefinitions="*,*,*,*" BackgroundColor="#FFFFFF" Padding="0" RowSpacing="0" ColumnSpacing="0">
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" BackgroundColor="#FFFFFF" Padding="0" RowSpacing="0" ColumnSpacing="0">
             <BoxView Grid.Row="0" Grid.ColumnSpan="4" BackgroundColor="#E0E0E0" HeightRequest="0.5"/>
-
+            
             <!-- Explore Tab -->
             <StackLayout Grid.Column="0" Spacing="4" Padding="12" 
-            x:Name="ExploreTab" 
-            BackgroundColor="#FFFFFF"
-            Opacity="0.6">
+                        x:Name="ExploreTab" 
+                        BackgroundColor="#FFFFFF"
+                        Opacity="1.0">
                 <StackLayout.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="explore"/>
                 </StackLayout.GestureRecognizers>
                 <Label Text="🏠" FontSize="20" HorizontalOptions="Center"/>
-                <Label Text="Khám phá" FontSize="10" TextColor="#1F1F1F" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                <Label Text="Khám phá" FontSize="10" TextColor="#FF6B35" HorizontalOptions="Center" HorizontalTextAlignment="Center" FontAttributes="Bold"/>
             </StackLayout>
 
             <!-- Saved Tab -->
             <StackLayout Grid.Column="1" Spacing="4" Padding="12" 
-            x:Name="SavedTab" 
-            BackgroundColor="#FFFFFF"
-            Opacity="0.5">
+                        x:Name="SavedTab" 
+                        BackgroundColor="#FFFFFF"
+                        Opacity="0.5">
                 <StackLayout.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="saved"/>
                 </StackLayout.GestureRecognizers>
@@ -255,9 +40,9 @@
 
             <!-- Tracking Tab -->
             <StackLayout Grid.Column="2" Spacing="4" Padding="12" 
-            x:Name="TrackingTab" 
-            BackgroundColor="#FFFFFF"
-            Opacity="0.5">
+                        x:Name="TrackingTab" 
+                        BackgroundColor="#FFFFFF"
+                        Opacity="0.5">
                 <StackLayout.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="tracking"/>
                 </StackLayout.GestureRecognizers>
@@ -267,9 +52,9 @@
 
             <!-- Settings Tab -->
             <StackLayout Grid.Column="3" Spacing="4" Padding="12" 
-            x:Name="SettingsTab" 
-            BackgroundColor="#FFFFFF"
-            Opacity="0.5">
+                        x:Name="SettingsTab" 
+                        BackgroundColor="#FFFFFF"
+                        Opacity="0.5">
                 <StackLayout.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="settings"/>
                 </StackLayout.GestureRecognizers>
@@ -277,26 +62,5 @@
                 <Label Text="Cài đặt" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
             </StackLayout>
         </Grid>
-
-        <!-- Floating Tracking Button -->
-        <StackLayout Grid.Row="2" Padding="16" BackgroundColor="#FFFFFF" Spacing="8" Margin="0">
-            <Button x:Name="TrackingButton" 
-                   Text="▶️ BẮT ĐẦU THEO DÕI" 
-                   Clicked="OnTrackingToggled" 
-                   BackgroundColor="#FF6B35" 
-                   TextColor="White" 
-                   CornerRadius="8" 
-                   Padding="16,12" 
-                   FontSize="13"
-                   FontAttributes="Bold"
-                   BorderWidth="0"
-                   HorizontalOptions="FillAndExpand"/>
-            <Label x:Name="StatusLabel" 
-                  Text="Nhấn để bắt đầu khám phá" 
-                  TextColor="#999999" 
-                  FontSize="12" 
-                  HorizontalTextAlignment="Center"/>
-        </StackLayout>
     </Grid>
-
 </ContentPage>

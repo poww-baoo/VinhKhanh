@@ -21,17 +21,20 @@ namespace VinhKhanh.Pages
         private AudioPlaybackService _audioService;
         private LocalizationService _localizationService;
         private List<Restaurant> _restaurants = new();
-        private List<Category> _categories = new();
-        private bool _isTracking = false;
         private string _currentTab = "explore";
-            
+        private ExplorePage _explorePage;
+        private SavedPage _savedPage;
+        private TrackingPage _trackingPage;
+        private SettingsPage _settingsPage;
+
         public MainPage()
         {
             InitializeComponent();
             InitializeServices();
+            InitializePages();
             LoadCategories();
             LoadRestaurants();
-            RefreshTrackAsiaMap();
+            ShowTabContent("explore");
         }
 
         private void InitializeServices()
@@ -46,9 +49,17 @@ namespace VinhKhanh.Pages
             _localizationService.LanguageChanged += OnLocalizationLanguageChanged;
         }
 
+        private void InitializePages()
+        {
+            _explorePage = new ExplorePage();
+            _savedPage = new SavedPage();
+            _trackingPage = new TrackingPage();
+            _settingsPage = new SettingsPage();
+        }
+
         private void LoadCategories()
         {
-            _categories = new List<Category>
+            var categories = new List<Category>
             {
                 new Category { Id = "1", Name = "Cơm Tấm" },
                 new Category { Id = "2", Name = "Bánh Mì" },
@@ -57,7 +68,8 @@ namespace VinhKhanh.Pages
                 new Category { Id = "5", Name = "Súp" }
             };
 
-            FilterChipsCollection.ItemsSource = _categories;
+            // Pass categories to ExplorePage
+            _explorePage.SetCategories(categories);
         }
 
         private void LoadRestaurants()
@@ -90,20 +102,9 @@ namespace VinhKhanh.Pages
                 }
             };
 
-            RestaurantsCollection.ItemsSource = _restaurants;
-            RefreshTrackAsiaMap();
-        }
-
-        private void RefreshTrackAsiaMap()
-        {
-            if (MapWebView == null || _restaurants.Count == 0)
-                return;
-
-            MapWebView.Source = new HtmlWebViewSource
-            {
-                Html = BuildTrackAsiaMapHtml(_restaurants),
-                BaseUrl = "https://maps.track-asia.com/"
-            };
+            // Pass restaurants to ExplorePage
+            _explorePage.SetRestaurants(_restaurants);
+            _trackingPage.SetRestaurants(_restaurants);
         }
 
         private static string EscapeJs(string? value)
@@ -114,87 +115,6 @@ namespace VinhKhanh.Pages
                 .Replace("'", "\\'")
                 .Replace("\r", " ")
                 .Replace("\n", " ");
-        }
-
-        private string BuildTrackAsiaMapHtml(List<Restaurant> restaurants)
-        {
-            var center = restaurants[0];
-            var centerLng = center.Longitude.ToString(CultureInfo.InvariantCulture);
-            var centerLat = center.Latitude.ToString(CultureInfo.InvariantCulture);
-
-            var markers = new StringBuilder();
-            foreach (var r in restaurants)
-            {
-                var lng = r.Longitude.ToString(CultureInfo.InvariantCulture);
-                var lat = r.Latitude.ToString(CultureInfo.InvariantCulture);
-                var name = EscapeJs(r.Name);
-                var rating = r.Rating.ToString("F1", CultureInfo.InvariantCulture);
-
-                markers.AppendLine($@"
-new sdk.Marker({{ color: '#FF6B35' }})
-    .setLngLat([{lng}, {lat}])
-    .setPopup(new sdk.Popup({{ offset: 12 }}).setHTML('<b>{name}</b><br/>⭐ {rating}'))
-    .addTo(map);");
-            }
-
-            return $@"
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset='utf-8' />
-<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0' />
-
-<link href='{TrackAsiaCssUrl}' rel='stylesheet' />
-<link href='{MapLibreCssUrl}' rel='stylesheet' />
-
-<style>
-  html, body, #map {{
-    margin: 0; width: 100%; height: 100%; overflow: hidden;
-  }}
-  .err {{
-    padding: 12px; color: #c00; font-family: sans-serif; font-size: 13px;
-  }}
-</style>
-</head>
-<body>
-<div id='map'></div>
-
-<script src='{TrackAsiaJsUrl}'></script>
-<script src='{MapLibreJsUrl}'></script>
-
-<script>
-(function() {{
-  const sdk = window.trackasia || window.mapboxgl || window.maplibregl;
-
-  if (!sdk) {{
-    document.getElementById('map').innerHTML =
-      '<div class=""err"">Không tải được SDK map. Kiểm tra lại URL JS/CSS trong docs TrackAsia.</div>';
-    return;
-  }}
-
-  // Một số SDK cần accessToken, một số thì không
-  if ('accessToken' in sdk) {{
-    sdk.accessToken = '{TrackAsiaApiKey}';
-  }}
-
-  const styleUrl = 'https://maps.track-asia.com/styles/v1/streets.json?key={TrackAsiaApiKey}';
-
-  const map = new sdk.Map({{
-    container: 'map',
-    style: styleUrl,
-    center: [{centerLng}, {centerLat}],
-    zoom: 15
-  }});
-
-  if (sdk.NavigationControl) {{
-    map.addControl(new sdk.NavigationControl(), 'top-right');
-  }}
-
-  {markers}
-}})();
-</script>
-</body>
-</html>";
         }
 
         private void OnTabTapped(object sender, TappedEventArgs e)
@@ -228,43 +148,35 @@ new sdk.Marker({{ color: '#FF6B35' }})
 
         private void ShowTabContent(string tab)
         {
-            ExplorePage.IsVisible = tab == "explore";
-            SavedPage.IsVisible = tab == "saved";
-            TrackingPage.IsVisible = tab == "tracking";
-            SettingsPage.IsVisible = tab == "settings";
-        }
+            ContentFrame.Children.Clear();
 
-        private async void OnTrackingToggled(object sender, EventArgs e)
-        {
-            _isTracking = !_isTracking;
+            ContentPage pageToShow = tab switch
+            {
+                "explore" => _explorePage,
+                "saved" => _savedPage,
+                "tracking" => _trackingPage,
+                "settings" => _settingsPage,
+                _ => _explorePage
+            };
 
-            if (_isTracking)
+            // Extract the main content from the page
+            var view = pageToShow.Content;
+            if (view != null)
             {
-                TrackingButton.Text = "⏸️ Dừng Theo dõi";
-                TrackingButton.BackgroundColor = Colors.Red;
-                StatusLabel.Text = "Đang theo dõi vị trí...";
-                TrackingStatusLabel.Text = "Trạng thái: Đang theo dõi";
-                await _locationService.StartTrackingAsync(_restaurants);
-            }
-            else
-            {
-                TrackingButton.Text = "▶️ BẮT ĐẦU THEO DÕI";
-                TrackingButton.BackgroundColor = Color.FromArgb("#FF6B35");
-                StatusLabel.Text = "Nhấn để bắt đầu khám phá";
-                TrackingStatusLabel.Text = "Trạng thái: Chưa bắt đầu";
-                _locationService.StopTracking();
+                var wrapper = new ContentView { Content = view };
+                ContentFrame.Children.Add(wrapper);
             }
         }
 
-        private void OnLocationUpdated(object sender, Location location)
+        private void OnLocationUpdated(object? sender, Location location)
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                LocationLabel.Text = $"Lat: {location.Latitude:F4}, Lng: {location.Longitude:F4}";
+                _trackingPage.UpdateLocation(location);
             });
         }
 
-        private async void OnEnteredGeofence(object sender, Restaurant restaurant)
+        private async void OnEnteredGeofence(object? sender, Restaurant restaurant)
         {
             await _audioService.PlayAudioAsync(new AudioContent
             {
@@ -277,61 +189,23 @@ new sdk.Marker({{ color: '#FF6B35' }})
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                StatusLabel.Text = $"Đang phát thuyết minh: {restaurant.Name}";
+                _trackingPage.UpdateStatus($"Đang phát thuyết minh: {restaurant.Name}");
             });
         }
 
-        private async void OnPlayAudioClicked(object sender, EventArgs e)
+        private void OnPlaybackCompleted(object? sender, AudioContent e)
         {
-            var button = sender as Button;
-            var restaurant = button?.CommandParameter as Restaurant;
-
-            if (restaurant != null)
+            MainThread.BeginInvokeOnMainThread(() =>
             {
-                await _audioService.PlayAudioAsync(new AudioContent
-                {
-                    RestaurantId = restaurant.Id,
-                    Language = _localizationService.CurrentLanguage,
-                    ContentType = "signature_dish",
-                    Title = restaurant.Name,
-                    AudioUrl = $"https://your-server.com/audio/{restaurant.Id}_signature_{_localizationService.CurrentLanguage}.mp3"
-                });
-            }
+                _trackingPage.UpdateStatus("Phát thuyết minh xong");
+            });
         }
 
-        private async void OnViewDetailsClicked(object sender, EventArgs e)
-        {
-            var button = sender as Button;
-            var restaurant = button?.CommandParameter as Restaurant;
-
-            if (restaurant != null)
-            {
-                await Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioService));
-            }
-        }
-
-        private void OnLanguageChanged(object sender, EventArgs e)
-        {
-            var button = sender as Button;
-            if (button?.CommandParameter is string language)
-            {
-                _localizationService.CurrentLanguage = language;
-            }
-        }
-
-        private void OnLocalizationLanguageChanged(object sender, EventArgs e)
+        private void OnLocalizationLanguageChanged(object? sender, EventArgs e)
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 LoadRestaurants();
-            });
-        }
-
-        private void OnPlaybackCompleted(object sender, AudioContent e)
-        {
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                StatusLabel.Text = "Phát thuyết minh xong";
             });
         }
     }

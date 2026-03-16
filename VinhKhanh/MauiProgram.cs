@@ -21,6 +21,10 @@ namespace VinhKhanh
                 .AddSingleton<AudioPlaybackService>()
                 .AddSingleton<LocalizationService>()
                 .AddSingleton<MainPage>()
+                .AddSingleton<ExplorePage>()
+                .AddSingleton<SavedPage>()
+                .AddSingleton<TrackingPage>()
+                .AddSingleton<SettingsPage>()
                 .AddSingleton<RestaurantDetailPage>();
 
 #if DEBUG

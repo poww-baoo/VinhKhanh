@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VinhKhanh.Pages.SettingsPage"
+             Title="Cài Đặt"
+             Padding="0"
+             BackgroundColor="#FAFAFA">
+
+    <Grid RowDefinitions="Auto,*" RowSpacing="0">
+
+        <!-- Header -->
+        <StackLayout Grid.Row="0" Padding="16,8" BackgroundColor="#FFFFFF" Spacing="0">
+            <HorizontalStackLayout Spacing="12" Padding="0,8">
+                <Label Text="⚙️ Cài Đặt" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="#1F1F1F"
+                       VerticalOptions="Center"
+                       HorizontalOptions="FillAndExpand"/>
+            </HorizontalStackLayout>
+        </StackLayout>
+
+        <!-- Content -->
+        <ScrollView Grid.Row="1" BackgroundColor="#FFFFFF">
+            <StackLayout Padding="16" Spacing="16">
+
+                <!-- Language Section -->
+                <Frame CornerRadius="12" Padding="16" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#F5F5F5">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="🌐 Ngôn Ngữ" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F"/>
+                        <HorizontalStackLayout Spacing="8">
+                            <Button Text="🇻🇳 Tiếng Việt" 
+                                   Clicked="OnLanguageChanged" 
+                                   CommandParameter="vi" 
+                                   HorizontalOptions="FillAndExpand" 
+                                   BackgroundColor="#FF6B35" 
+                                   TextColor="White" 
+                                   Padding="8,6" 
+                                   CornerRadius="6" 
+                                   FontSize="12" 
+                                   BorderWidth="0"/>
+                            <Button Text="🇬🇧 English" 
+                                   Clicked="OnLanguageChanged" 
+                                   CommandParameter="en" 
+                                   HorizontalOptions="FillAndExpand" 
+                                   BackgroundColor="#E0E0E0" 
+                                   TextColor="#1F1F1F" 
+                                   Padding="8,6" 
+                                   CornerRadius="6" 
+                                   FontSize="12" 
+                                   BorderWidth="0"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Notifications Section -->
+                <Frame CornerRadius="12" Padding="16" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#F5F5F5">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="🔔 Thông Báo" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F"/>
+                        <Switch x:Name="NotificationSwitch" IsToggled="True"/>
+                        <Label Text="Nhận thông báo khi gần quán ăn" FontSize="12" TextColor="#666666"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- About Section -->
+                <Frame CornerRadius="12" Padding="16" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#F5F5F5">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="ℹ️ Thông Tin" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F"/>
+                        <Label Text="Phố Ẩm Thực Vĩnh Khánh" FontSize="12" TextColor="#1F1F1F"/>
+                        <Label Text="Phiên bản: 1.0.0" FontSize="12" TextColor="#666666"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+            </StackLayout>
+        </ScrollView>
+    </Grid>
+
+</ContentPage>
