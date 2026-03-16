@@ -29,7 +29,8 @@
                     <VerticalStackLayout Spacing="12">
                         <Label Text="🌐 Ngôn Ngữ" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F"/>
                         <HorizontalStackLayout Spacing="8">
-                            <Button Text="🇻🇳 Tiếng Việt" 
+                            <Button x:Name="ViLanguageButton"
+                                   Text="🇻🇳 Tiếng Việt" 
                                    Clicked="OnLanguageChanged" 
                                    CommandParameter="vi" 
                                    HorizontalOptions="FillAndExpand" 
@@ -39,7 +40,8 @@
                                    CornerRadius="6" 
                                    FontSize="12" 
                                    BorderWidth="0"/>
-                            <Button Text="🇬🇧 English" 
+                            <Button x:Name="EnLanguageButton"
+                                   Text="🇬🇧 English" 
                                    Clicked="OnLanguageChanged" 
                                    CommandParameter="en" 
                                    HorizontalOptions="FillAndExpand" 
