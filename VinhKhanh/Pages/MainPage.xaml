@@ -63,7 +63,7 @@
         <SwipeView Grid.Row="1" x:Name="ContentSwipeView" BackgroundColor="#FAFAFA">
             <ScrollView>
                 <VerticalStackLayout x:Name="ExplorePage" Padding="0" Spacing="0">
-                    
+
                     <!-- Category Filter Chips -->
                     <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
                         <Label Text="Danh mục" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F" Margin="0,0,0,8"/>
@@ -113,7 +113,7 @@
                                 <StackLayout Spacing="0" BackgroundColor="Transparent" Padding="0">
                                     <Frame CornerRadius="0" Padding="16" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#FFFFFF" Margin="0">
                                         <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="80,*,Auto" ColumnSpacing="12" RowSpacing="8">
-                                            
+
                                             <!-- Restaurant Image/Icon -->
                                             <Frame Grid.Row="0" Grid.RowSpan="4" Grid.Column="0" 
                                                    CornerRadius="8" Padding="0" BorderColor="#E0E0E0" 
@@ -176,13 +176,30 @@
                                             </HorizontalStackLayout>
                                         </Grid>
                                     </Frame>
-                                    
+
                                     <!-- Divider -->
                                     <BoxView HeightRequest="0.5" BackgroundColor="#E0E0E0" Margin="16,0"/>
                                 </StackLayout>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
+
+                    <!-- TrackAsia Map -->
+                    <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="8">
+                        <Label Text="Bản đồ khu vực"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="#1F1F1F" />
+                        <Frame CornerRadius="12"
+                               Padding="0"
+                               BorderColor="#E0E0E0"
+                               HasShadow="False"
+                               BackgroundColor="#F5F5F5"
+                               HeightRequest="260">
+                            <WebView x:Name="MapWebView"
+                                     HeightRequest="260" />
+                        </Frame>
+                    </StackLayout>
                 </VerticalStackLayout>
             </ScrollView>
         </SwipeView>
