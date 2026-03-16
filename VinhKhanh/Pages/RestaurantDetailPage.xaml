@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VinhKhanh.Pages.RestaurantDetailPage"
+             Title="Chi Tiết Quán Ăn">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16" BackgroundColor="#F5F5F5">
+            <Frame CornerRadius="12" Padding="0" HasShadow="True" HeightRequest="200">
+                <Label Text="🍽️" FontSize="80" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="#ECF0F1"/>
+            </Frame>
+
+            <VerticalStackLayout Spacing="8">
+                <Label x:Name="RestaurantNameLabel" FontSize="24" FontAttributes="Bold"/>
+                <HorizontalStackLayout Spacing="8">
+                    <Label x:Name="YearLabel" FontSize="12" TextColor="#7F8C8D"/>
+                    <Label Text="•" TextColor="#7F8C8D"/>
+                    <Label x:Name="RatingLabel" FontSize="12" TextColor="#F39C12"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <Frame CornerRadius="12" Padding="12" BorderColor="#3498DB">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Lịch Sử" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="HistoryLabel" FontSize="12" LineBreakMode="WordWrap"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame CornerRadius="12" Padding="12" BorderColor="#E74C3C">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Món Đặc Biệt" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="SignatureDishLabel" FontSize="14" FontAttributes="Bold"/>
+                    <Label x:Name="SignatureDishStoryLabel" FontSize="12" LineBreakMode="WordWrap"/>
+                    <Button x:Name="PlaySignatureButton" Text="🔊 Nghe Câu Chuyện" Clicked="OnPlaySignatureDish" Margin="0,8,0,0"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame CornerRadius="12" Padding="12" BorderColor="#9B59B6">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Menu Nổi Bật" FontSize="16" FontAttributes="Bold"/>
+                    <CollectionView x:Name="MenuCollection" HeightRequest="150">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame CornerRadius="8" Padding="8" BorderColor="#ECF0F1">
+                                    <Label Text="{Binding Name}" FontSize="12"/>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame CornerRadius="12" Padding="12" BorderColor="#27AE60">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Khuyến Mãi" FontSize="16" FontAttributes="Bold"/>
+                    <CollectionView x:Name="PromotionsCollection" HeightRequest="150">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame CornerRadius="8" Padding="8" BorderColor="#F1C40F">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Title}" FontSize="12" FontAttributes="Bold"/>
+                                        <Label Text="{Binding Description}" FontSize="10" TextColor="#7F8C8D"/>
+                                    </VerticalStackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame CornerRadius="12" Padding="12" BorderColor="#2C3E50">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Điều Khiển Phát" FontSize="14" FontAttributes="Bold"/>
+                    <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Button x:Name="PlayButton" Text="▶️" Clicked="OnPlayClicked" Padding="12"/>
+                        <Button x:Name="PauseButton" Text="⏸️" Clicked="OnPauseClicked" Padding="12"/>
+                        <Button x:Name="StopButton" Text="⏹️" Clicked="OnStopClicked" Padding="12"/>
+                    </HorizontalStackLayout>
+                    <ProgressBar x:Name="PlaybackProgress" Progress="0" Margin="0,8,0,0"/>
+                </VerticalStackLayout>
+            </Frame>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

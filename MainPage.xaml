@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VinhKhanh.Pages.MainPage"
+             Title="Vinh Khánh">
+
+    <!-- TẤT CẢ CÁC CONTROL PHẢI NẰM BÊN TRONG SINGLE ROOT ELEMENT -->
+    <VerticalStackLayout Padding="20">
+        <!-- Thêm controls của bạn ở đây -->
+        <Label x:Name="LocationLabel" Text="Vị trí: ..." />
+        <Label x:Name="StatusLabel" Text="Trạng thái..." />
+        <Button x:Name="TrackingButton" Text="▶️ Bắt đầu Theo dõi" Clicked="OnTrackingToggled" />
+        <CollectionView x:Name="RestaurantsCollection" />
+    </VerticalStackLayout>
+
+</ContentPage>

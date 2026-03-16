@@ -1,0 +1,148 @@
+﻿using System.Diagnostics;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Devices.Sensors;
+using VinhKhanh.Models;
+
+namespace VinhKhanh.Services
+{
+    public class LocationService
+    {
+        private CancellationTokenSource _cts;
+        private readonly double _debounceSeconds = 3;
+        private DateTime _lastLocationUpdate = DateTime.MinValue;
+
+        public event EventHandler<Location> LocationUpdated;
+        public event EventHandler<Restaurant> EnteredGeofence;
+        public event EventHandler<Restaurant> ExitedGeofence;
+
+        private Dictionary<string, DateTime> _geofenceEntryTimes = new();
+        private Dictionary<string, DateTime> _lastPlaybackTimes = new();
+
+        public async Task StartTrackingAsync(List<Restaurant> restaurants)
+        {
+            try
+            {
+                if (IsBusy)
+                    return;
+
+                var status = await CheckLocationPermission();
+                if (status != PermissionStatus.Granted)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Quyền", "Quyền vị trí bị từ chối", "OK");
+                    return;
+                }
+
+                IsBusy = true;
+                _cts = new CancellationTokenSource();
+
+                while (!_cts.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var location = await GetCurrentLocationAsync();
+                        if (location != null)
+                        {
+                            if ((DateTime.Now - _lastLocationUpdate).TotalSeconds >= _debounceSeconds)
+                            {
+                                LocationUpdated?.Invoke(this, location);
+                                _lastLocationUpdate = DateTime.Now;
+                                
+                                await CheckGeofencesAsync(location, restaurants);
+                            }
+                        }
+
+                        await Task.Delay(2000);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Location tracking error: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await Application.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi theo dõi: {ex.Message}", "OK");
+            }
+        }
+
+        public void StopTracking()
+        {
+            _cts?.Cancel();
+            IsBusy = false;
+        }
+
+        private async Task CheckGeofencesAsync(Location userLocation, List<Restaurant> restaurants)
+        {
+            foreach (var restaurant in restaurants)
+            {
+                double distance = GetDistance(
+                    userLocation.Latitude, userLocation.Longitude,
+                    restaurant.Latitude, restaurant.Longitude
+                );
+
+                bool isInside = distance <= restaurant.GeofenceRadius;
+                string restaurantId = restaurant.Id;
+
+                if (isInside)
+                {
+                    if (!_geofenceEntryTimes.ContainsKey(restaurantId))
+                    {
+                        _geofenceEntryTimes[restaurantId] = DateTime.Now;
+                    }
+
+                    if ((DateTime.Now - _geofenceEntryTimes[restaurantId]).TotalSeconds >= _debounceSeconds)
+                    {
+                        if (!_lastPlaybackTimes.ContainsKey(restaurantId) ||
+                            (DateTime.Now - _lastPlaybackTimes[restaurantId]).TotalMinutes >= 20)
+                        {
+                            EnteredGeofence?.Invoke(this, restaurant);
+                            _lastPlaybackTimes[restaurantId] = DateTime.Now;
+                        }
+                    }
+                }
+                else
+                {
+                    if (_geofenceEntryTimes.ContainsKey(restaurantId))
+                    {
+                        _geofenceEntryTimes.Remove(restaurantId);
+                        ExitedGeofence?.Invoke(this, restaurant);
+                    }
+                }
+            }
+        }
+
+        private async Task<Location> GetCurrentLocationAsync()
+        {
+            return await Geolocation.GetLocationAsync(
+                new GeolocationRequest(
+                    GeolocationAccuracy.Best,
+                    timeout: TimeSpan.FromSeconds(10)
+                )
+            );
+        }
+
+        private async Task<PermissionStatus> CheckLocationPermission()
+        {
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            }
+            return status;
+        }
+
+        private double GetDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371000;
+            double dLat = (lat2 - lat1) * Math.PI / 180;
+            double dLon = (lon2 - lon1) * Math.PI / 180;
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
+                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
+
+        public bool IsBusy { get; set; }
+    }
+}
