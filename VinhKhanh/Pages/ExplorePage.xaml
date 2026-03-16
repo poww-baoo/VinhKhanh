@@ -14,26 +14,26 @@
 
             <!-- Top App Bar -->
             <HorizontalStackLayout Spacing="12" Padding="0,8">
-                <Label Text="Phố Ẩm Thực" 
-                       FontSize="20" 
+                <Label Text="Phố Ẩm Thực"
+                       FontSize="20"
                        FontAttributes="Bold"
                        TextColor="#1F1F1F"
                        VerticalOptions="Center"/>
-                <Label Text="Vĩnh Khánh" 
-                       FontSize="20" 
+                <Label Text="Vĩnh Khánh"
+                       FontSize="20"
                        FontAttributes="Bold"
                        TextColor="#FF6B35"
                        VerticalOptions="Center"
                        HorizontalOptions="FillAndExpand"/>
-                <Button Text="🔔" 
-                       BackgroundColor="Transparent"
-                       TextColor="#1F1F1F"
-                       Padding="8"
-                       FontSize="18"
-                       BorderWidth="0"
-                       CornerRadius="20"
-                       WidthRequest="40"
-                       HeightRequest="40"/>
+                <Button Text="🔔"
+                        BackgroundColor="Transparent"
+                        TextColor="#1F1F1F"
+                        Padding="8"
+                        FontSize="18"
+                        BorderWidth="0"
+                        CornerRadius="20"
+                        WidthRequest="40"
+                        HeightRequest="40"/>
             </HorizontalStackLayout>
 
             <!-- Search Bar -->
@@ -41,9 +41,9 @@
                 <HorizontalStackLayout Spacing="12">
                     <Label Text="🔍" FontSize="18" VerticalOptions="Center"/>
                     <Entry x:Name="LocationLabel"
-                           Placeholder="Tìm kiếm quán ăn..." 
-                           FontSize="14" 
-                           BackgroundColor="Transparent" 
+                           Placeholder="Tìm kiếm quán ăn..."
+                           FontSize="14"
+                           BackgroundColor="Transparent"
                            HorizontalOptions="FillAndExpand"
                            IsReadOnly="True"
                            TextColor="#1F1F1F"
@@ -63,20 +63,31 @@
         <ScrollView Grid.Row="1" BackgroundColor="#FAFAFA">
             <VerticalStackLayout x:Name="ExploreContent" Padding="0" Spacing="0">
 
+                <!-- TrackAsia Map -->
+                <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="8">
+                    <Label Text="Bản đồ khu vực" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F"/>
+                    <Frame CornerRadius="12" Padding="0" BorderColor="#E0E0E0" HasShadow="False" HeightRequest="260">
+                        <WebView x:Name="TrackAsiaMapWebView" />
+                    </Frame>
+                </StackLayout>
+
+                <!-- Section Divider -->
+                <BoxView HeightRequest="1" BackgroundColor="#E0E0E0"/>
+
                 <!-- Category Filter Chips -->
                 <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
                     <Label Text="Danh mục" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F" Margin="0,0,0,8"/>
-                    <CollectionView x:Name="FilterChipsCollection" 
-                                  SelectionMode="Single"
-                                  HeightRequest="45">
+                    <CollectionView x:Name="FilterChipsCollection"
+                                    SelectionMode="Single"
+                                    HeightRequest="45">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="local:Category">
-                                <Frame CornerRadius="20" 
-                                       Padding="14,8" 
-                                       BorderColor="#E0E0E0" 
+                                <Frame CornerRadius="20"
+                                       Padding="14,8"
+                                       BorderColor="#E0E0E0"
                                        HasShadow="False"
                                        BackgroundColor="#F5F5F5">
                                     <Label Text="{Binding Name}" FontSize="12" TextColor="#1F1F1F"/>
@@ -100,9 +111,9 @@
                 </StackLayout>
 
                 <!-- Restaurants List -->
-                <CollectionView x:Name="RestaurantsCollection" 
-                              SelectionMode="Single"
-                              Margin="0">
+                <CollectionView x:Name="RestaurantsCollection"
+                                SelectionMode="Single"
+                                Margin="0">
                     <CollectionView.ItemsLayout>
                         <LinearItemsLayout Orientation="Vertical" ItemSpacing="0"/>
                     </CollectionView.ItemsLayout>
@@ -114,16 +125,16 @@
                                     <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="80,*,Auto" ColumnSpacing="12" RowSpacing="8">
 
                                         <!-- Restaurant Image/Icon -->
-                                        <Frame Grid.Row="0" Grid.RowSpan="4" Grid.Column="0" 
-                                               CornerRadius="8" Padding="0" BorderColor="#E0E0E0" 
+                                        <Frame Grid.Row="0" Grid.RowSpan="4" Grid.Column="0"
+                                               CornerRadius="8" Padding="0" BorderColor="#E0E0E0"
                                                HasShadow="False" BackgroundColor="#F5F5F5" WidthRequest="80" HeightRequest="80">
                                             <Label Text="🍲" FontSize="36" HorizontalOptions="Center" VerticalOptions="Center"/>
                                         </Frame>
 
                                         <!-- Restaurant Name and Rating -->
                                         <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
-                                            <Label Text="{Binding Name}" 
-                                                   FontSize="15" 
+                                            <Label Text="{Binding Name}"
+                                                   FontSize="15"
                                                    FontAttributes="Bold"
                                                    TextColor="#1F1F1F"
                                                    LineBreakMode="TailTruncation"
@@ -143,35 +154,35 @@
                                         </HorizontalStackLayout>
 
                                         <!-- Highlights -->
-                                        <Label Grid.Row="2" Grid.Column="1" 
-                                               Text="{Binding Highlights}" 
-                                               FontSize="11" 
-                                               TextColor="#666666" 
-                                               LineBreakMode="TailTruncation" 
+                                        <Label Grid.Row="2" Grid.Column="1"
+                                               Text="{Binding Highlights}"
+                                               FontSize="11"
+                                               TextColor="#666666"
+                                               LineBreakMode="TailTruncation"
                                                MaxLines="2"/>
 
                                         <!-- Action Buttons -->
                                         <HorizontalStackLayout Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,4,0,0">
-                                            <Button Text="🔊 Nghe" 
-                                                   Clicked="OnPlayAudioClicked" 
-                                                   CommandParameter="{Binding .}" 
-                                                   HorizontalOptions="FillAndExpand"
-                                                   BackgroundColor="#FF6B35"
-                                                   TextColor="White"
-                                                   Padding="8,6"
-                                                   CornerRadius="6"
-                                                   FontSize="11"
-                                                   BorderWidth="0"/>
-                                            <Button Text="📋 Chi tiết" 
-                                                   Clicked="OnViewDetailsClicked" 
-                                                   CommandParameter="{Binding .}"
-                                                   HorizontalOptions="FillAndExpand"
-                                                   BackgroundColor="#F5F5F5"
-                                                   TextColor="#1F1F1F"
-                                                   Padding="8,6"
-                                                   CornerRadius="6"
-                                                   FontSize="11"
-                                                   BorderWidth="0"/>
+                                            <Button Text="🔊 Nghe"
+                                                    Clicked="OnPlayAudioClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    HorizontalOptions="FillAndExpand"
+                                                    BackgroundColor="#FF6B35"
+                                                    TextColor="White"
+                                                    Padding="8,6"
+                                                    CornerRadius="6"
+                                                    FontSize="11"
+                                                    BorderWidth="0"/>
+                                            <Button Text="📋 Chi tiết"
+                                                    Clicked="OnViewDetailsClicked"
+                                                    CommandParameter="{Binding .}"
+                                                    HorizontalOptions="FillAndExpand"
+                                                    BackgroundColor="#F5F5F5"
+                                                    TextColor="#1F1F1F"
+                                                    Padding="8,6"
+                                                    CornerRadius="6"
+                                                    FontSize="11"
+                                                    BorderWidth="0"/>
                                         </HorizontalStackLayout>
                                     </Grid>
                                 </Frame>
