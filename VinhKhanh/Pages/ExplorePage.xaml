@@ -67,7 +67,22 @@
                 <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="8">
                     <Label Text="Bản đồ khu vực" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F"/>
                     <Frame CornerRadius="12" Padding="0" BorderColor="#E0E0E0" HasShadow="False" HeightRequest="260">
-                        <WebView x:Name="TrackAsiaMapWebView" />
+                        <Grid>
+                            <WebView x:Name="TrackAsiaMapWebView" />
+
+                            <Button Text="⛶"
+                                    Clicked="OnExpandMapClicked"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    CornerRadius="18"
+                                    FontSize="14"
+                                    BackgroundColor="#CCFFFFFF"
+                                    TextColor="#1F1F1F"
+                                    BorderWidth="0"
+                                    HorizontalOptions="Start"
+                                    VerticalOptions="Start"
+                                    Margin="8"/>
+                        </Grid>
                     </Frame>
                 </StackLayout>
 
@@ -193,8 +208,34 @@
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
+
             </VerticalStackLayout>
         </ScrollView>
-    </Grid>
 
+        <!-- Full-screen map overlay: PHẢI đặt ngoài ScrollView -->
+        <Grid x:Name="FullScreenMapOverlay"
+              Grid.RowSpan="2"
+              IsVisible="False"
+              BackgroundColor="#CC000000"
+              ZIndex="9999">
+            <Grid>
+                <WebView x:Name="TrackAsiaMapFullScreenWebView" />
+
+                <!-- Nút đóng ở góc trên bên trái -->
+                <Button Text="✕"
+                        Clicked="OnCloseFullScreenMapClicked"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        CornerRadius="20"
+                        FontSize="16"
+                        BackgroundColor="#CCFFFFFF"
+                        TextColor="#1F1F1F"
+                        BorderWidth="0"
+                        HorizontalOptions="Start"
+                        VerticalOptions="Start"
+                        Margin="12,12,12,12"/>
+            </Grid>
+        </Grid>
+
+    </Grid>
 </ContentPage>

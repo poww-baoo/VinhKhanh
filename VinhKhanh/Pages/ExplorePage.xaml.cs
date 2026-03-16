@@ -43,7 +43,14 @@ public partial class ExplorePage : ContentPage
 
 	private void RenderTrackAsiaMap()
 	{
-		var mapWebView = this.FindByName<WebView>("TrackAsiaMapWebView");
+		var html = BuildMapHtml(_restaurants);
+		SetMapHtml("TrackAsiaMapWebView", html);
+		SetMapHtml("TrackAsiaMapFullScreenWebView", html);
+	}
+
+	private void SetMapHtml(string webViewName, string html)
+	{
+		var mapWebView = this.FindByName<WebView>(webViewName);
 		if (mapWebView is null)
 		{
 			return;
@@ -51,7 +58,7 @@ public partial class ExplorePage : ContentPage
 
 		mapWebView.Source = new HtmlWebViewSource
 		{
-			Html = BuildMapHtml(_restaurants)
+			Html = html
 		};
 	}
 
@@ -194,5 +201,27 @@ public partial class ExplorePage : ContentPage
 		}
 
 		await Shell.Current.Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioService));
+	}
+
+	private void OnExpandMapClicked(object sender, EventArgs e)
+	{
+		var overlay = this.FindByName<Grid>("FullScreenMapOverlay");
+		if (overlay is null)
+		{
+			return;
+		}
+
+		overlay.IsVisible = true;
+	}
+
+	private void OnCloseFullScreenMapClicked(object sender, EventArgs e)
+	{
+		var overlay = this.FindByName<Grid>("FullScreenMapOverlay");
+		if (overlay is null)
+		{
+			return;
+		}
+
+		overlay.IsVisible = false;
 	}
 }
