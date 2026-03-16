@@ -27,6 +27,12 @@ namespace VinhKhanh.Pages
         private TrackingPage _trackingPage;
         private SettingsPage _settingsPage;
 
+        // Cache nội dung của các page
+        private View _exploreContent;
+        private View _savedContent;
+        private View _trackingContent;
+        private View _settingsContent;
+
         public MainPage()
         {
             InitializeComponent();
@@ -34,6 +40,7 @@ namespace VinhKhanh.Pages
             InitializePages();
             LoadCategories();
             LoadRestaurants();
+            CachePageContents();
             ShowTabContent("explore");
         }
 
@@ -107,6 +114,21 @@ namespace VinhKhanh.Pages
             _trackingPage.SetRestaurants(_restaurants);
         }
 
+        private void CachePageContents()
+        {
+            // Lưu nội dung của các page
+            _exploreContent = _explorePage.Content;
+            _savedContent = _savedPage.Content;
+            _trackingContent = _trackingPage.Content;
+            _settingsContent = _settingsPage.Content;
+
+            // Xóa nội dung khỏi page để có thể add vào ContentFrame
+            _explorePage.Content = null;
+            _savedPage.Content = null;
+            _trackingPage.Content = null;
+            _settingsPage.Content = null;
+        }
+
         private static string EscapeJs(string? value)
         {
             if (string.IsNullOrEmpty(value)) return string.Empty;
@@ -150,21 +172,18 @@ namespace VinhKhanh.Pages
         {
             ContentFrame.Children.Clear();
 
-            ContentPage pageToShow = tab switch
+            View contentToShow = tab switch
             {
-                "explore" => _explorePage,
-                "saved" => _savedPage,
-                "tracking" => _trackingPage,
-                "settings" => _settingsPage,
-                _ => _explorePage
+                "explore" => _exploreContent,
+                "saved" => _savedContent,
+                "tracking" => _trackingContent,
+                "settings" => _settingsContent,
+                _ => _exploreContent
             };
 
-            // Extract the main content from the page
-            var view = pageToShow.Content;
-            if (view != null)
+            if (contentToShow != null)
             {
-                var wrapper = new ContentView { Content = view };
-                ContentFrame.Children.Add(wrapper);
+                ContentFrame.Children.Add(contentToShow);
             }
         }
 
