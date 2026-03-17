@@ -26,12 +26,14 @@ namespace VinhKhanh.Pages
         private SavedPage _savedPage;
         private TrackingPage _trackingPage;
         private SettingsPage _settingsPage;
+        private QRCodePage _qrcodePage; // Thêm vào class fields
 
         // Cache nội dung của các page
         private View _exploreContent;
         private View _savedContent;
         private View _trackingContent;
         private View _settingsContent;
+        private View _qrcodeContent; // Thêm vào class fields
 
         public MainPage()
         {
@@ -61,6 +63,8 @@ namespace VinhKhanh.Pages
             _explorePage = new ExplorePage();
             _savedPage = new SavedPage();
             _trackingPage = new TrackingPage();
+            _trackingPage.SetLocationService(_locationService);  // Thêm dòng này
+            _qrcodePage = new QRCodePage();  // Thêm dòng này
             _settingsPage = new SettingsPage();
         }
 
@@ -71,7 +75,7 @@ namespace VinhKhanh.Pages
                 new Category { Id = "1", Name = "Cơm Tấm" },
                 new Category { Id = "2", Name = "Bánh Mì" },
                 new Category { Id = "3", Name = "Phở" },
-                new Category { Id = "4", Name = "Bún" },
+                new Category { Id = "4", Name = "Bùn" },
                 new Category { Id = "5", Name = "Súp" }
             };
 
@@ -120,12 +124,14 @@ namespace VinhKhanh.Pages
             _exploreContent = _explorePage.Content;
             _savedContent = _savedPage.Content;
             _trackingContent = _trackingPage.Content;
+            _qrcodeContent = _qrcodePage.Content;  // Thêm dòng này
             _settingsContent = _settingsPage.Content;
 
             // Xóa nội dung khỏi page để có thể add vào ContentFrame
             _explorePage.Content = null;
             _savedPage.Content = null;
             _trackingPage.Content = null;
+            _qrcodePage.Content = null;  // Thêm dòng này
             _settingsPage.Content = null;
         }
 
@@ -155,16 +161,19 @@ namespace VinhKhanh.Pages
             ExploreTab.Opacity = _currentTab == "explore" ? 1.0 : 0.5;
             SavedTab.Opacity = _currentTab == "saved" ? 1.0 : 0.5;
             TrackingTab.Opacity = _currentTab == "tracking" ? 1.0 : 0.5;
+            QRCodeTab.Opacity = _currentTab == "qrcode" ? 1.0 : 0.5;
             SettingsTab.Opacity = _currentTab == "settings" ? 1.0 : 0.5;
 
             var exploreLabelTextColor = _currentTab == "explore" ? Color.FromArgb("#FF6B35") : Color.FromArgb("#1F1F1F");
             var savedLabelTextColor = _currentTab == "saved" ? Color.FromArgb("#FF6B35") : Color.FromArgb("#666666");
             var trackingLabelTextColor = _currentTab == "tracking" ? Color.FromArgb("#FF6B35") : Color.FromArgb("#666666");
+            var qrcodeLabelTextColor = _currentTab == "qrcode" ? Color.FromArgb("#FF6B35") : Color.FromArgb("#666666");
             var settingsLabelTextColor = _currentTab == "settings" ? Color.FromArgb("#FF6B35") : Color.FromArgb("#666666");
 
             ((Label)ExploreTab.Children[1]).TextColor = exploreLabelTextColor;
             ((Label)SavedTab.Children[1]).TextColor = savedLabelTextColor;
             ((Label)TrackingTab.Children[1]).TextColor = trackingLabelTextColor;
+            ((Label)QRCodeTab.Children[1]).TextColor = qrcodeLabelTextColor;
             ((Label)SettingsTab.Children[1]).TextColor = settingsLabelTextColor;
         }
 
@@ -172,18 +181,29 @@ namespace VinhKhanh.Pages
         {
             ContentFrame.Children.Clear();
 
-            View contentToShow = tab switch
+            try
             {
-                "explore" => _exploreContent,
-                "saved" => _savedContent,
-                "tracking" => _trackingContent,
-                "settings" => _settingsContent,
-                _ => _exploreContent
-            };
+                View contentToShow = tab switch
+                {
+                    "explore" => _exploreContent,
+                    "saved" => _savedContent,
+                    "tracking" => _trackingContent,
+                    "qrcode" => _qrcodeContent,  // Thêm dòng này
+                    "settings" => _settingsContent,
+                    _ => _exploreContent
+                };
 
-            if (contentToShow != null)
+                if (contentToShow != null)
+                {
+                    ContentFrame.Children.Add(contentToShow);
+                }
+            }
+            catch (Exception ex)
             {
-                ContentFrame.Children.Add(contentToShow);
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await DisplayAlert("Lỗi", $"Không thể tải trang: {ex.Message}", "OK");
+                });
             }
         }
 

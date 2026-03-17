@@ -2,50 +2,60 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="VinhKhanh.Pages.TrackingPage"
-             Title="Theo Dõi"
-             Padding="0"
-             BackgroundColor="#FAFAFA">
+             Title="Theo Dõi">
 
-    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
+    <VerticalStackLayout Padding="16" Spacing="16" BackgroundColor="#F5F5F5">
+        
+        <!-- Nút bật/tắt theo dõi -->
+        <Button x:Name="TrackingToggleButton"
+                Text="▶️ Bật Theo Dõi"
+                Clicked="OnTrackingToggleClicked"
+                BackgroundColor="#FF6B35"
+                TextColor="White"
+                Padding="16,12"
+                CornerRadius="10"
+                FontSize="14"
+                FontAttributes="Bold"
+                BorderWidth="0"/>
 
-        <!-- Header -->
-        <StackLayout Grid.Row="0" Padding="16,8" BackgroundColor="#FFFFFF" Spacing="0">
-            <HorizontalStackLayout Spacing="12" Padding="0,8">
-                <Label Text="🎯 Theo Dõi" 
-                       FontSize="20" 
-                       FontAttributes="Bold"
-                       TextColor="#1F1F1F"
-                       VerticalOptions="Center"
-                       HorizontalOptions="FillAndExpand"/>
-            </HorizontalStackLayout>
-        </StackLayout>
+        <!-- Hiển thị vị trí hiện tại -->
+        <Frame CornerRadius="12" Padding="16" BorderColor="#3498DB" HasShadow="False">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="📍 Vị Trí Hiện Tại" FontSize="16" FontAttributes="Bold"/>
+                <Label x:Name="LocationLabel" FontSize="12" TextColor="#666666" Text="Chờ GPS..."/>
+            </VerticalStackLayout>
+        </Frame>
 
-        <!-- Content -->
-        <StackLayout Grid.Row="1" BackgroundColor="#FFFFFF" Padding="24" Spacing="12" HorizontalOptions="Center" VerticalOptions="Center">
-            <Label Text="🎯 Theo Dõi" FontSize="24" FontAttributes="Bold" TextColor="#1F1F1F" HorizontalOptions="Center"/>
-            <Label Text="Kích hoạt theo dõi để bắt đầu" FontSize="14" TextColor="#999999" HorizontalOptions="Center" Margin="0,12,0,0"/>
-            <Label x:Name="TrackingStatusLabel" Text="Trạng thái: Chưa bắt đầu" FontSize="12" TextColor="#666666" HorizontalOptions="Center" Margin="0,24,0,0"/>
-        </StackLayout>
+        <!-- Hiển thị trạng thái -->
+        <Frame CornerRadius="12" Padding="16" BorderColor="#E74C3C" HasShadow="False">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="🔊 Trạng Thái" FontSize="16" FontAttributes="Bold"/>
+                <Label x:Name="StatusLabel" FontSize="12" TextColor="#666666" Text="Sẵn sàng"/>
+            </VerticalStackLayout>
+        </Frame>
 
-        <!-- Tracking Button -->
-        <StackLayout Grid.Row="2" Padding="16" BackgroundColor="#FFFFFF" Spacing="8">
-            <Button x:Name="TrackingButton" 
-                   Text="▶️ BẮT ĐẦU THEO DÕI" 
-                   Clicked="OnTrackingToggled" 
-                   BackgroundColor="#FF6B35" 
-                   TextColor="White" 
-                   CornerRadius="8" 
-                   Padding="16,12" 
-                   FontSize="13"
-                   FontAttributes="Bold"
-                   BorderWidth="0"
-                   HorizontalOptions="FillAndExpand"/>
-            <Label x:Name="StatusLabel" 
-                  Text="Nhấn để bắt đầu theo dõi" 
-                  TextColor="#999999" 
-                  FontSize="12" 
-                  HorizontalTextAlignment="Center"/>
-        </StackLayout>
-    </Grid>
+        <!-- Danh sách quán ăn gần đây -->
+        <Frame CornerRadius="12" Padding="16" BorderColor="#27AE60" HasShadow="False">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="🍽️ Quán Ăn Gần Bạn" FontSize="16" FontAttributes="Bold"/>
+                <CollectionView x:Name="RestaurantsCollection" HeightRequest="300">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Frame CornerRadius="8" Padding="12" BorderColor="#E0E0E0" HasShadow="False">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold"/>
+                                    <Label Text="{Binding Highlights}" FontSize="11" TextColor="#666666"/>
+                                    <Label Text="{Binding Rating, StringFormat='⭐ {0:F1}'}" FontSize="11" TextColor="#F39C12"/>
+                                </VerticalStackLayout>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </Frame>
+    </VerticalStackLayout>
 
 </ContentPage>

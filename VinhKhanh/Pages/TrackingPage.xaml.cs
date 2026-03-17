@@ -5,53 +5,134 @@ namespace VinhKhanh.Pages;
 
 public partial class TrackingPage : ContentPage
 {
-	private readonly LocationService _locationService;
-	private bool _isTracking = false;
+	private Location? _currentLocation;
 	private List<Restaurant> _restaurants = new();
+	private bool _isTrackingEnabled = false;
+	private LocationService? _locationService;
 
 	public TrackingPage()
 	{
 		InitializeComponent();
-		_locationService = new LocationService();
+		RestaurantsCollection.ItemsSource = _restaurants;
 	}
 
 	public void SetRestaurants(List<Restaurant> restaurants)
 	{
 		_restaurants = restaurants;
+		RestaurantsCollection.ItemsSource = _restaurants;
 	}
 
-	private async void OnTrackingToggled(object sender, EventArgs e)
+	public void SetLocationService(LocationService locationService)
 	{
-		_isTracking = !_isTracking;
+		_locationService = locationService;
+	}
 
-		if (_isTracking)
+	private void OnTrackingToggleClicked(object sender, EventArgs e)
+	{
+		_isTrackingEnabled = !_isTrackingEnabled;
+		UpdateTrackingUI();
+
+		if (_isTrackingEnabled)
 		{
-			TrackingButton.Text = "⏸️ Dừng Theo dõi";
-			TrackingButton.BackgroundColor = Colors.Red;
-			StatusLabel.Text = "Đang theo dõi vị trí...";
-			TrackingStatusLabel.Text = "Trạng thái: Đang theo dõi";
-
-			// Không await vòng lặp tracking dài hạn để tránh UI bị giữ handler
-			_ = _locationService.StartTrackingAsync(_restaurants);
-			return;
+			StartTracking();
 		}
+		else
+		{
+			StopTracking();
+		}
+	}
 
-		TrackingButton.Text = "▶️ BẮT ĐẦU THEO DÕI";
-		TrackingButton.BackgroundColor = Color.FromArgb("#FF6B35");
-		StatusLabel.Text = "Nhấn để bắt đầu theo dõi";
-		TrackingStatusLabel.Text = "Trạng thái: Chưa bắt đầu";
-		_locationService.StopTracking();
+	private void UpdateTrackingUI()
+	{
+		if (_isTrackingEnabled)
+		{
+			TrackingToggleButton.Text = "⏸️ Tắt Theo Dõi";
+			TrackingToggleButton.BackgroundColor = Color.FromArgb("#E74C3C");
+			StatusLabel.Text = "Đang theo dõi vị trí...";
+		}
+		else
+		{
+			TrackingToggleButton.Text = "▶️ Bật Theo Dõi";
+			TrackingToggleButton.BackgroundColor = Color.FromArgb("#FF6B35");
+			StatusLabel.Text = "Sẵn sàng";
+		}
+	}
 
-		await Task.CompletedTask;
+	private async void StartTracking()
+	{
+		try
+		{
+			if (_locationService != null)
+			{
+				await _locationService.StartTrackingAsync(_restaurants);
+				MainThread.BeginInvokeOnMainThread(() =>
+				{
+				DisplayAlert("Thành công", "Đã bật theo dõi vị trí", "OK");
+				});
+			}
+		}
+		catch (Exception ex)
+		{
+			MainThread.BeginInvokeOnMainThread(() =>
+			{
+				DisplayAlert("Lỗi", $"Không thể bật theo dõi: {ex.Message}", "OK");
+				_isTrackingEnabled = false;
+				UpdateTrackingUI();
+			});
+		}
+	}
+
+	private void StopTracking()
+	{
+		try
+		{
+			if (_locationService != null)
+			{
+				_locationService.StopTracking();
+				MainThread.BeginInvokeOnMainThread(() =>
+				{
+					DisplayAlert("Thành công", "Đã tắt theo dõi vị trí", "OK");
+				});
+			}
+		}
+		catch (Exception ex)
+		{
+			MainThread.BeginInvokeOnMainThread(() =>
+			{
+				DisplayAlert("Lỗi", $"Không thể tắt theo dõi: {ex.Message}", "OK");
+			});
+		}
 	}
 
 	public void UpdateLocation(Location location)
 	{
-		StatusLabel.Text = $"Vị trí: {location.Latitude:F4}, {location.Longitude:F4}";
+		try
+		{
+			_currentLocation = location;
+			LocationLabel.Text = $"Vĩ độ: {location.Latitude:F4}, Kinh độ: {location.Longitude:F4}";
+		}
+		catch (Exception ex)
+		{
+			MainThread.BeginInvokeOnMainThread(() =>
+			{
+				DisplayAlert("Lỗi", $"Lỗi cập nhật vị trí: {ex.Message}", "OK");
+			});
+		}
 	}
 
 	public void UpdateStatus(string status)
 	{
-		StatusLabel.Text = status;
+		try
+		{
+			if (!_isTrackingEnabled) return;
+			StatusLabel.Text = status;
+		}
+		catch (Exception ex)
+		{
+			MainThread.BeginInvokeOnMainThread(() =>
+			{
+				DisplayAlert("Lỗi", $"Lỗi cập nhật trạng thái: {ex.Message}", "OK");
+			});
+		}
 	}
 }

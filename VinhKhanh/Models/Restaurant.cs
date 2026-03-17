@@ -1,4 +1,4 @@
-namespace VinhKhanh.Models
+﻿namespace VinhKhanh.Models
 {
     public class Restaurant
     {
@@ -10,16 +10,16 @@ namespace VinhKhanh.Models
         public double Rating { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public double GeofenceRadius { get; set; } = 20; // meters
+        public double GeofenceRadius { get; set; } = 100; // mặc định 100 mét
         public int Priority { get; set; }
 
         // Modular Audio Content
-        public SignatureDish SignatureDish { get; set; }
-        public List<MenuItem> HighlightMenuItems { get; set; }
-        public List<Promotion> Promotions { get; set; }
+        public SignatureDish? SignatureDish { get; set; }
+        public List<MenuItem>? HighlightMenuItems { get; set; }
+        public List<Promotion>? Promotions { get; set; }
 
         // Localization
-        public Dictionary<string, RestaurantLocalized> LocalizedContent { get; set; }
+        public Dictionary<string, RestaurantLocalized>? LocalizedContent { get; set; }
     }
 
     public class SignatureDish

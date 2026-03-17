@@ -11,8 +11,8 @@
         <Grid Grid.Row="0" x:Name="ContentFrame" Padding="0"/>
 
         <!-- Bottom Navigation Bar -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" BackgroundColor="#FFFFFF" Padding="0" RowSpacing="0" ColumnSpacing="0">
-            <BoxView Grid.Row="0" Grid.ColumnSpan="4" BackgroundColor="#E0E0E0" HeightRequest="0.5"/>
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" BackgroundColor="#FFFFFF" Padding="0" RowSpacing="0" ColumnSpacing="0">
+            <BoxView Grid.Row="0" Grid.ColumnSpan="5" BackgroundColor="#E0E0E0" HeightRequest="0.5"/>
             
             <!-- Explore Tab -->
             <StackLayout Grid.Column="0" Spacing="4" Padding="12" 
@@ -38,8 +38,20 @@
                 <Label Text="Đã Lưu" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
             </StackLayout>
 
-            <!-- Tracking Tab -->
+            <!-- QR Code Tab (Centered) -->
             <StackLayout Grid.Column="2" Spacing="4" Padding="12" 
+                        x:Name="QRCodeTab" 
+                        BackgroundColor="#FFFFFF"
+                        Opacity="0.5">
+                <StackLayout.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="qrcode"/>
+                </StackLayout.GestureRecognizers>
+                <Label Text="📱" FontSize="20" HorizontalOptions="Center"/>
+                <Label Text="Quét QR" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+            </StackLayout>
+
+            <!-- Tracking Tab -->
+            <StackLayout Grid.Column="3" Spacing="4" Padding="12" 
                         x:Name="TrackingTab" 
                         BackgroundColor="#FFFFFF"
                         Opacity="0.5">
@@ -51,7 +63,7 @@
             </StackLayout>
 
             <!-- Settings Tab -->
-            <StackLayout Grid.Column="3" Spacing="4" Padding="12" 
+            <StackLayout Grid.Column="4" Spacing="4" Padding="12" 
                         x:Name="SettingsTab" 
                         BackgroundColor="#FFFFFF"
                         Opacity="0.5">
