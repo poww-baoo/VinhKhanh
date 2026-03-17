@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <!-- Top-left finder pattern -->
+  <rect x="0" y="0" width="8" height="8" fill="#000"/>
+  <rect x="1" y="1" width="6" height="6" fill="#fff"/>
+  <rect x="2" y="2" width="4" height="4" fill="#000"/>
+  
+  <!-- Top-right finder pattern -->
+  <rect x="16" y="0" width="8" height="8" fill="#000"/>
+  <rect x="17" y="1" width="6" height="6" fill="#fff"/>
+  <rect x="18" y="2" width="4" height="4" fill="#000"/>
+  
+  <!-- Bottom-left finder pattern -->
+  <rect x="0" y="16" width="8" height="8" fill="#000"/>
+  <rect x="1" y="17" width="6" height="6" fill="#fff"/>
+  <rect x="2" y="18" width="4" height="4" fill="#000"/>
+  
+  <!-- Random QR pattern -->
+  <rect x="10" y="10" width="2" height="2" fill="#000"/>
+  <rect x="14" y="10" width="2" height="2" fill="#000"/>
+  <rect x="12" y="12" width="2" height="2" fill="#000"/>
+  <rect x="14" y="14" width="2" height="2" fill="#000"/>
+  <rect x="10" y="16" width="2" height="2" fill="#000"/>
+</svg>

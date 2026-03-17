@@ -40,13 +40,17 @@
 
             <!-- QR Code Tab (Centered) -->
             <StackLayout Grid.Column="2" Spacing="4" Padding="12" 
-                        x:Name="QRCodeTab" 
-                        BackgroundColor="#FFFFFF"
-                        Opacity="0.5">
+            x:Name="QRCodeTab" 
+            BackgroundColor="#FFFFFF"
+            Opacity="0.5">
                 <StackLayout.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="qrcode"/>
                 </StackLayout.GestureRecognizers>
-                <Label Text="📱" FontSize="20" HorizontalOptions="Center"/>
+                <Image Source="qrcode_icon.svg" 
+                       WidthRequest="20" 
+                       HeightRequest="20" 
+                       HorizontalOptions="Center"
+                       Aspect="AspectFit"/>
                 <Label Text="Quét QR" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
             </StackLayout>
 

@@ -3,12 +3,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="VinhKhanh.Pages.QRCodePage"
              Title="Quét Mã QR"
-             BackgroundColor="#F5F5F5">
+             BackgroundColor="#1F1F1F">
 
-    <VerticalStackLayout Padding="16" Spacing="16">
-
-        <!-- QR Scanner Frame -->
-        <Frame CornerRadius="12" Padding="0" HasShadow="True" HeightRequest="300" BorderColor="#E0E0E0">
+    <Grid RowDefinitions="*,60" RowSpacing="0">
+        
+        <!-- QR Scanner -->
+        <Frame Grid.Row="0" 
+               CornerRadius="0" 
+               Padding="0" 
+               HasShadow="False" 
+               BorderColor="Transparent"
+               BackgroundColor="#1F1F1F">
             <Grid>
                 <WebView x:Name="QRScannerWebView" BackgroundColor="#1F1F1F"/>
                 <StackLayout Padding="16" VerticalOptions="End" HorizontalOptions="End" Spacing="8">
@@ -27,46 +32,21 @@
             </Grid>
         </Frame>
 
-        <!-- Scan Result -->
-        <Frame CornerRadius="12" Padding="16" BorderColor="#3498DB" HasShadow="False" BackgroundColor="White">
-            <VerticalStackLayout Spacing="8">
-                <Label Text="📊 Kết Quả Quét" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F"/>
-                <Label x:Name="ScanResultLabel" FontSize="12" TextColor="#666666" Text="Chưa quét mã nào"/>
-            </VerticalStackLayout>
+        <!-- Bottom QR Icon -->
+        <Frame Grid.Row="1" 
+               CornerRadius="0" 
+               Padding="0" 
+               HasShadow="False" 
+               BorderColor="Transparent"
+               BackgroundColor="#1F1F1F">
+            <Grid HorizontalOptions="Center" VerticalOptions="Center">
+                <Label Text="📱" 
+                       FontSize="28" 
+                       HorizontalOptions="Center" 
+                       VerticalOptions="Center"/>
+            </Grid>
         </Frame>
 
-        <!-- Info Section -->
-        <Frame CornerRadius="12" Padding="16" BorderColor="#E74C3C" HasShadow="False" BackgroundColor="White">
-            <VerticalStackLayout Spacing="8">
-                <Label Text="ℹ️ Hướng Dẫn" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F"/>
-                <Label Text="• Giơ camera vào mã QR" FontSize="12" TextColor="#666666"/>
-                <Label Text="• Đảm bảo ánh sáng đủ" FontSize="12" TextColor="#666666"/>
-                <Label Text="• Đợi kết quả quét" FontSize="12" TextColor="#666666"/>
-            </VerticalStackLayout>
-        </Frame>
-
-        <!-- Action Buttons -->
-        <HorizontalStackLayout Spacing="8">
-            <Button Text="🔄 Quét Lại"
-                    Clicked="OnRescanClicked"
-                    HorizontalOptions="FillAndExpand"
-                    BackgroundColor="#FF6B35"
-                    TextColor="White"
-                    Padding="12,8"
-                    CornerRadius="8"
-                    FontSize="12"
-                    BorderWidth="0"/>
-
-            <Button Text="📋 Sao Chép"
-                    Clicked="OnCopyClicked"
-                    HorizontalOptions="FillAndExpand"
-                    BackgroundColor="#3498DB"
-                    TextColor="White"
-                    Padding="12,8"
-                    CornerRadius="8"
-                    FontSize="12"
-                    BorderWidth="0"/>
-        </HorizontalStackLayout>
-    </VerticalStackLayout>
+    </Grid>
 
 </ContentPage>

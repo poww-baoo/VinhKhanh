@@ -111,37 +111,12 @@ namespace VinhKhanh.Pages
             });
         }
 
-        private void OnRescanClicked(object sender, EventArgs e)
-        {
-            _lastScannedResult = null;
-            ScanResultLabel.Text = "Chưa quét mã nào";
-            InitializeQRScanner();
-        }
-
-        private void OnCopyClicked(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(_lastScannedResult))
-            {
-                MainThread.BeginInvokeOnMainThread(async () =>
-                {
-                    await DisplayAlert("Thông báo", "Chưa có kết quả quét để sao chép", "OK");
-                });
-                return;
-            }
-
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                await Clipboard.SetTextAsync(_lastScannedResult);
-                await DisplayAlert("Thành công", "Đã sao chép vào clipboard", "OK");
-            });
-        }
-
-        public void OnQRScanned(string result)
+        private void OnQRScanned(string result)
         {
             _lastScannedResult = result;
-            MainThread.BeginInvokeOnMainThread(() =>
+            MainThread.BeginInvokeOnMainThread(async () =>
             {
-                ScanResultLabel.Text = $"✓ {result}";
+                await DisplayAlert("Quét Mã QR", $"Kết quả: {result}", "OK");
             });
         }
     }
