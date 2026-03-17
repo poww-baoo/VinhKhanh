@@ -8,7 +8,7 @@ namespace VinhKhanh.Services
     public class LocationService
     {
         private CancellationTokenSource _cts;
-        private readonly double _debounceSeconds = 3;
+        private readonly double _debounceSeconds = 3; // X giây debounce
         private DateTime _lastLocationUpdate = DateTime.MinValue;
 
         public event EventHandler<Location> LocationUpdated;
@@ -20,15 +20,18 @@ namespace VinhKhanh.Services
 
         public async Task StartTrackingAsync(List<Restaurant> restaurants)
         {
+            if (IsBusy)
+                return;
+
             try
             {
-                if (IsBusy)
-                    return;
-
                 var status = await CheckLocationPermission();
                 if (status != PermissionStatus.Granted)
                 {
-                    await Application.Current.MainPage.DisplayAlert("Quyền", "Quyền vị trí bị từ chối", "OK");
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Quyền", "Quyền vị trí bị từ chối", "OK");
+                    });
                     return;
                 }
 
@@ -40,18 +43,20 @@ namespace VinhKhanh.Services
                     try
                     {
                         var location = await GetCurrentLocationAsync();
-                        if (location != null)
+                        if (location != null &&
+                            (DateTime.Now - _lastLocationUpdate).TotalSeconds >= _debounceSeconds)
                         {
-                            if ((DateTime.Now - _lastLocationUpdate).TotalSeconds >= _debounceSeconds)
-                            {
-                                LocationUpdated?.Invoke(this, location);
-                                _lastLocationUpdate = DateTime.Now;
-                                
-                                await CheckGeofencesAsync(location, restaurants);
-                            }
+                            LocationUpdated?.Invoke(this, location);
+                            _lastLocationUpdate = DateTime.Now;
+
+                            CheckGeofences(location, restaurants);
                         }
 
-                        await Task.Delay(2000);
+                        await Task.Delay(2000, _cts.Token);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        break;
                     }
                     catch (Exception ex)
                     {
@@ -61,7 +66,14 @@ namespace VinhKhanh.Services
             }
             catch (Exception ex)
             {
-                await Application.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi theo dõi: {ex.Message}", "OK");
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    await Application.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi theo dõi: {ex.Message}", "OK");
+                });
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -71,7 +83,7 @@ namespace VinhKhanh.Services
             IsBusy = false;
         }
 
-        private async Task CheckGeofencesAsync(Location userLocation, List<Restaurant> restaurants)
+        private void CheckGeofences(Location userLocation, List<Restaurant> restaurants)
         {
             foreach (var restaurant in restaurants)
             {
@@ -115,7 +127,7 @@ namespace VinhKhanh.Services
         {
             return await Geolocation.GetLocationAsync(
                 new GeolocationRequest(
-                    GeolocationAccuracy.Best,
+                    GeolocationAccuracy.High,
                     timeout: TimeSpan.FromSeconds(10)
                 )
             );

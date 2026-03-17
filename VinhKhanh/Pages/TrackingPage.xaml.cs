@@ -5,7 +5,7 @@ namespace VinhKhanh.Pages;
 
 public partial class TrackingPage : ContentPage
 {
-	private LocationService _locationService;
+	private readonly LocationService _locationService;
 	private bool _isTracking = false;
 	private List<Restaurant> _restaurants = new();
 
@@ -30,16 +30,19 @@ public partial class TrackingPage : ContentPage
 			TrackingButton.BackgroundColor = Colors.Red;
 			StatusLabel.Text = "Đang theo dõi vị trí...";
 			TrackingStatusLabel.Text = "Trạng thái: Đang theo dõi";
-			await _locationService.StartTrackingAsync(_restaurants);
+
+			// Không await vòng lặp tracking dài hạn để tránh UI bị giữ handler
+			_ = _locationService.StartTrackingAsync(_restaurants);
+			return;
 		}
-		else
-		{
-			TrackingButton.Text = "▶️ BẮT ĐẦU THEO DÕI";
-			TrackingButton.BackgroundColor = Color.FromArgb("#FF6B35");
-			StatusLabel.Text = "Nhấn để bắt đầu theo dõi";
-			TrackingStatusLabel.Text = "Trạng thái: Chưa bắt đầu";
-			_locationService.StopTracking();
-		}
+
+		TrackingButton.Text = "▶️ BẮT ĐẦU THEO DÕI";
+		TrackingButton.BackgroundColor = Color.FromArgb("#FF6B35");
+		StatusLabel.Text = "Nhấn để bắt đầu theo dõi";
+		TrackingStatusLabel.Text = "Trạng thái: Chưa bắt đầu";
+		_locationService.StopTracking();
+
+		await Task.CompletedTask;
 	}
 
 	public void UpdateLocation(Location location)
