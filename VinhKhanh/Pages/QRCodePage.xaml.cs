@@ -1,4 +1,7 @@
-﻿using VinhKhanh.Models;
+﻿using System.Diagnostics;
+using ZXing.Net.Maui;
+using ZXing.Net.Maui.Controls;
+using VinhKhanh.Models;
 using VinhKhanh.Services;
 
 namespace VinhKhanh.Pages
@@ -7,117 +10,95 @@ namespace VinhKhanh.Pages
     {
         private string? _lastScannedResult;
         private bool _isFlashlightOn = false;
+        private bool _isProcessing = false;
 
         public QRCodePage()
         {
             InitializeComponent();
-            InitializeQRScanner();
         }
 
-        private void InitializeQRScanner()
+        protected override void OnAppearing()
         {
-            var html = BuildQRScannerHtml();
-            QRScannerWebView.Source = new HtmlWebViewSource { Html = html };
-            QRScannerWebView.Navigating += OnWebViewNavigating;
+            base.OnAppearing();
+            RequestCameraPermission();
         }
 
-        private void OnWebViewNavigating(object? sender, WebNavigatingEventArgs e)
+        protected override void OnDisappearing()
         {
-            if (e.Url.StartsWith("qr-scan-result://"))
+            base.OnDisappearing();
+            QRScannerView?.Handler?.DisconnectHandler();
+        }
+
+        private async void RequestCameraPermission()
+        {
+            try
             {
-                e.Cancel = true;
-                var result = Uri.UnescapeDataString(e.Url.Replace("qr-scan-result://", ""));
-                OnQRScanned(result);
-            }
-        }
+                var cameraStatus = await Permissions.CheckStatusAsync<Permissions.Camera>();
 
-        private string BuildQRScannerHtml()
-        {
-            return @"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8' />
-    <meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=no' />
-    <script src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'></script>
-    <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #1F1F1F; }
-        #scanner-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        canvas { display: none; }
-        .scanner-overlay { position: absolute; border: 2px solid #FF6B35; width: 250px; height: 250px; border-radius: 8px; }
-    </style>
-</head>
-<body>
-    <div id='scanner-container'>
-        <video id='video' playsinline></video>
-        <canvas id='canvas'></canvas>
-        <div class='scanner-overlay'></div>
-    </div>
-    <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        let lastResult = '';
+                if (cameraStatus != PermissionStatus.Granted)
+                {
+                    cameraStatus = await Permissions.RequestAsync<Permissions.Camera>();
+                }
 
-        async function startScanning() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
-                });
-                video.srcObject = stream;
-                video.play();
-                requestAnimationFrame(scanQRCode);
-            } catch (err) {
-                console.error('Camera error:', err);
-                document.body.innerHTML = '<div style=""color:white;padding:20px;font-family:sans-serif;"">Không thể truy cập camera.</div>';
-            }
-        }
-
-        function scanQRCode() {
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height);
-                
-                if (code && code.data !== lastResult) {
-                    lastResult = code.data;
-                    window.location.href = 'qr-scan-result://' + encodeURIComponent(code.data);
+                if (cameraStatus == PermissionStatus.Granted)
+                {
+                    Debug.WriteLine("Camera permission granted");
+                }
+                else
+                {
+                    await DisplayAlert("Lỗi", "Ứng dụng cần quyền truy cập camera để quét mã QR", "OK");
                 }
             }
-            requestAnimationFrame(scanQRCode);
+            catch (Exception ex)
+            {
+                await DisplayAlert("Lỗi", $"Lỗi yêu cầu quyền: {ex.Message}", "OK");
+                Debug.WriteLine($"Permission error: {ex}");
+            }
         }
 
-        startScanning();
-    </script>
-</body>
-</html>";
+        private void OnBarcodesDetected(object sender, BarcodeDetectionEventArgs e)
+        {
+            if (_isProcessing) return;
+
+            var barcode = e.Results.FirstOrDefault();
+            if (barcode == null) return;
+
+            var result = barcode.Value;
+
+            if (result == _lastScannedResult) return;
+
+            _isProcessing = true;
+            _lastScannedResult = result;
+
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                QRScannerView.IsEnabled = false;
+                await DisplayAlert("Quét Mã QR", $"Kết quả: {result}", "OK");
+                QRScannerView.IsEnabled = true;
+                _isProcessing = false;
+            });
         }
 
         private void OnFlashlightToggleClicked(object sender, EventArgs e)
         {
-            _isFlashlightOn = !_isFlashlightOn;
-            FlashlightToggleButton.BackgroundColor = _isFlashlightOn 
-                ? Color.FromArgb("#FFC107") 
-                : Color.FromArgb("#FF6B35");
-            
-            MainThread.BeginInvokeOnMainThread(async () =>
+            try
             {
-                await DisplayAlert("Thông báo", 
-                    _isFlashlightOn ? "Bật đèn pin" : "Tắt đèn pin", "OK");
-            });
-        }
-
-        private void OnQRScanned(string result)
-        {
-            _lastScannedResult = result;
-            MainThread.BeginInvokeOnMainThread(async () =>
+                _isFlashlightOn = !_isFlashlightOn;
+                FlashlightToggleButton.BackgroundColor = _isFlashlightOn 
+                    ? Color.FromArgb("#FFC107") 
+                    : Color.FromArgb("#FF6B35");
+                
+                #if ANDROID
+                if (_isFlashlightOn)
+                    Flashlight.Default.TurnOnAsync();
+                else
+                    Flashlight.Default.TurnOffAsync();
+                #endif
+            }
+            catch (Exception ex)
             {
-                await DisplayAlert("Quét Mã QR", $"Kết quả: {result}", "OK");
-            });
+                Debug.WriteLine($"Flashlight error: {ex.Message}");
+            }
         }
     }
 }

@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
              x:Class="VinhKhanh.Pages.QRCodePage"
              Title="Quét Mã QR"
              BackgroundColor="#1F1F1F">
 
     <Grid RowDefinitions="*,60" RowSpacing="0">
-        
-        <!-- QR Scanner -->
+
         <Frame Grid.Row="0" 
                CornerRadius="0" 
                Padding="0" 
@@ -15,7 +15,28 @@
                BorderColor="Transparent"
                BackgroundColor="#1F1F1F">
             <Grid>
-                <WebView x:Name="QRScannerWebView" BackgroundColor="#1F1F1F"/>
+                <zxing:CameraBarcodeReaderView x:Name="QRScannerView"
+                                               BarcodesDetected="OnBarcodesDetected"
+                                               CameraLocation="Rear"/>
+
+                <Grid RowDefinitions="*,250,*" ColumnDefinitions="*,250,*" 
+                      InputTransparent="True"
+                      BackgroundColor="Transparent">
+                    <BoxView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Opacity="0.4" BackgroundColor="Black"/>
+                    <BoxView Grid.Row="0" Grid.Column="0" Opacity="0.4" BackgroundColor="Black"/>
+                    <BoxView Grid.Row="0" Grid.Column="2" Opacity="0.4" BackgroundColor="Black"/>
+                    <BoxView Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Opacity="0.4" BackgroundColor="Black"/>
+                    <BoxView Grid.Row="2" Grid.Column="0" Opacity="0.4" BackgroundColor="Black"/>
+                    <BoxView Grid.Row="2" Grid.Column="2" Opacity="0.4" BackgroundColor="Black"/>
+
+                    <Border Grid.Row="1" Grid.Column="1"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="0"
+                            Stroke="#FF6B35"
+                            BackgroundColor="Transparent"
+                            StrokeThickness="2"/>
+                </Grid>
+
                 <StackLayout Padding="16" VerticalOptions="End" HorizontalOptions="End" Spacing="8">
                     <Button x:Name="FlashlightToggleButton" 
                             Text="🔦" 
@@ -32,7 +53,6 @@
             </Grid>
         </Frame>
 
-        <!-- Bottom QR Icon -->
         <Frame Grid.Row="1" 
                CornerRadius="0" 
                Padding="0" 

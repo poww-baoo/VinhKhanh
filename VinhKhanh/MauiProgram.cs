@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using ZXing.Net.Maui;
 using VinhKhanh.Pages;
 using VinhKhanh.Services;
+using ZXing.Net.Maui.Controls;
 
 namespace VinhKhanh
 {
@@ -16,7 +18,9 @@ namespace VinhKhanh
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 })
+                .UseBarcodeReader()
                 .Services
+                .AddSingleton<SQLiteDbContext>()
                 .AddSingleton<LocationService>()
                 .AddSingleton<AudioPlaybackService>()
                 .AddSingleton<LocalizationService>()
@@ -25,6 +29,7 @@ namespace VinhKhanh
                 .AddSingleton<SavedPage>()
                 .AddSingleton<TrackingPage>()
                 .AddSingleton<SettingsPage>()
+                .AddSingleton<QRCodePage>()
                 .AddSingleton<RestaurantDetailPage>();
 
 #if DEBUG
