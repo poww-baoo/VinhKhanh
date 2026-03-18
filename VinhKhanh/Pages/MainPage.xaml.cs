@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using VinhKhanh.Models;
 using VinhKhanh.Services;
 
@@ -17,121 +18,130 @@ namespace VinhKhanh.Pages
         private const string MapLibreCssUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
         private const string MapLibreJsUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
 
-        private LocationService _locationService;
-        private AudioPlaybackService _audioService;
-        private LocalizationService _localizationService;
+        private readonly DatabaseService _databaseService;
+        private readonly LocationService _locationService;
+        private readonly AudioPlaybackService _audioService;
+        private readonly LocalizationService _localizationService;
+
         private List<Restaurant> _restaurants = new();
         private string _currentTab = "explore";
-        private ExplorePage _explorePage;
-        private SavedPage _savedPage;
-        private TrackingPage _trackingPage;
-        private SettingsPage _settingsPage;
-        private QRCodePage _qrcodePage; // Thêm vào class fields
+        private readonly ExplorePage _explorePage;
+        private readonly SavedPage _savedPage;
+        private readonly TrackingPage _trackingPage;
+        private readonly SettingsPage _settingsPage;
+        private readonly QRCodePage _qrcodePage;
 
-        // Cache nội dung của các page
-        private View _exploreContent;
-        private View _savedContent;
-        private View _trackingContent;
-        private View _settingsContent;
-        private View _qrcodeContent; // Thêm vào class fields
+        private View? _exploreContent;
+        private View? _savedContent;
+        private View? _trackingContent;
+        private View? _settingsContent;
+        private View? _qrcodeContent;
+
+        private bool _isDataLoaded;
 
         public MainPage()
         {
             InitializeComponent();
-            InitializeServices();
-            InitializePages();
-            LoadCategories();
-            LoadRestaurants();
-            CachePageContents();
-            ShowTabContent("explore");
-        }
 
-        private void InitializeServices()
-        {
-            _locationService = new LocationService();
-            _audioService = new AudioPlaybackService();
+            _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
+            _locationService = ResolveService<LocationService>() ?? new LocationService();
+            _audioService = ResolveService<AudioPlaybackService>() ?? new AudioPlaybackService();
             _localizationService = LocalizationService.Instance;
 
             _locationService.LocationUpdated += OnLocationUpdated;
             _locationService.EnteredGeofence += OnEnteredGeofence;
             _audioService.PlaybackCompleted += OnPlaybackCompleted;
             _localizationService.LanguageChanged += OnLocalizationLanguageChanged;
-        }
 
-        private void InitializePages()
-        {
             _explorePage = new ExplorePage();
             _savedPage = new SavedPage();
             _trackingPage = new TrackingPage();
-            _trackingPage.SetLocationService(_locationService);  // Thêm dòng này
-            _qrcodePage = new QRCodePage();  // Thêm dòng này
+            _trackingPage.SetLocationService(_locationService);
+            _qrcodePage = new QRCodePage();
             _settingsPage = new SettingsPage();
+
+            CachePageContents();
+            ShowTabContent("explore");
+
+            Loaded += OnLoaded;
         }
 
-        private void LoadCategories()
-        {
-            var categories = new List<Category>
-            {
-                new Category { Id = "1", Name = "Cơm Tấm" },
-                new Category { Id = "2", Name = "Bánh Mì" },
-                new Category { Id = "3", Name = "Phở" },
-                new Category { Id = "4", Name = "Bùn" },
-                new Category { Id = "5", Name = "Súp" }
-            };
+        private static T? ResolveService<T>() where T : class =>
+            Application.Current?.Handler?.MauiContext?.Services.GetService<T>();
 
-            // Pass categories to ExplorePage
-            _explorePage.SetCategories(categories);
+        private async void OnLoaded(object? sender, EventArgs e)
+        {
+            if (_isDataLoaded) return;
+            _isDataLoaded = true;
+            await LoadDataFromDatabaseAsync();
         }
 
-        private void LoadRestaurants()
+        private async Task LoadDataFromDatabaseAsync()
         {
-            _restaurants = new List<Restaurant>
+            try
             {
-                new Restaurant
-                {
-                    Id = "1",
-                    Name = "Quán Cơm Tấm Truyền Thống",
-                    YearEstablished = 1985,
-                    History = "Quán cơm tấm được thành lập từ năm 1985...",
-                    Highlights = "Cơm tấm, thịt nướng, trứng chưng",
-                    Rating = 4.8,
-                    Latitude = 10.7769,
-                    Longitude = 106.6966,
-                    Priority = 1
-                },
-                new Restaurant
-                {
-                    Id = "2",
-                    Name = "Bánh Mì Sài Gòn",
-                    YearEstablished = 1995,
-                    History = "Quán bánh mì nổi tiếng với công thức độc đáo...",
-                    Highlights = "Bánh mì nóng, pâté, chả lua",
-                    Rating = 4.7,
-                    Latitude = 10.7771,
-                    Longitude = 106.6968,
-                    Priority = 2
-                }
-            };
+                await _databaseService.InitAsync();
 
-            // Pass restaurants to ExplorePage
-            _explorePage.SetRestaurants(_restaurants);
-            _trackingPage.SetRestaurants(_restaurants);
+                var categories = await _databaseService.GetCategoriesAsync();
+                _explorePage.SetCategories(categories);
+
+                var pois = await _databaseService.GetAllPoisAsync();
+                _restaurants = pois
+                    .Select(MapPoiToRestaurant)
+                    .OrderBy(r => r.Priority)
+                    .ToList();
+
+                _explorePage.SetRestaurants(_restaurants);
+                _trackingPage.SetRestaurants(_restaurants);
+            }
+            catch (Exception ex)
+            {
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    await DisplayAlert("Lỗi dữ liệu", $"Không thể đọc dữ liệu từ vinhkhanh.db: {ex.Message}", "OK");
+                });
+            }
+        }
+
+        private static Restaurant MapPoiToRestaurant(Poi poi)
+        {
+            var highlights = string.IsNullOrWhiteSpace(poi.TextVi)
+                ? poi.History
+                : poi.TextVi;
+
+            if (highlights.Length > 120)
+                highlights = highlights[..120] + "...";
+
+            return new Restaurant
+            {
+                Id = poi.Id.ToString(),
+                CategoryId = poi.CategoryId,
+                CategoryName = poi.CategoryName,
+                Name = poi.Name,
+                YearEstablished = poi.YearEstablished,
+                History = poi.History,
+                TextVi = poi.TextVi,
+                Highlights = highlights,
+                Rating = poi.Rating,
+                Latitude = poi.Lat,
+                Longitude = poi.Lng,
+                GeofenceRadius = poi.RadiusMeters,
+                Priority = poi.Priority
+            };
         }
 
         private void CachePageContents()
         {
-            // Lưu nội dung của các page
             _exploreContent = _explorePage.Content;
             _savedContent = _savedPage.Content;
             _trackingContent = _trackingPage.Content;
-            _qrcodeContent = _qrcodePage.Content;  // Thêm dòng này
+            _qrcodeContent = _qrcodePage.Content;
             _settingsContent = _settingsPage.Content;
 
-            // Xóa nội dung khỏi page để có thể add vào ContentFrame
             _explorePage.Content = null;
             _savedPage.Content = null;
             _trackingPage.Content = null;
-            _qrcodePage.Content = null;  // Thêm dòng này
+            _qrcodePage.Content = null;
             _settingsPage.Content = null;
         }
 
@@ -183,12 +193,12 @@ namespace VinhKhanh.Pages
 
             try
             {
-                View contentToShow = tab switch
+                var contentToShow = tab switch
                 {
                     "explore" => _exploreContent,
                     "saved" => _savedContent,
                     "tracking" => _trackingContent,
-                    "qrcode" => _qrcodeContent,  // Thêm dòng này
+                    "qrcode" => _qrcodeContent,
                     "settings" => _settingsContent,
                     _ => _exploreContent
                 };
@@ -217,14 +227,15 @@ namespace VinhKhanh.Pages
 
         private async void OnEnteredGeofence(object? sender, Restaurant restaurant)
         {
-            await _audioService.PlayAudioAsync(new AudioContent
-            {
-                RestaurantId = restaurant.Id,
-                Language = _localizationService.CurrentLanguage,
-                ContentType = "signature_dish",
-                Title = restaurant.Name,
-                AudioUrl = $"https://your-server.com/audio/{restaurant.Id}_signature_{_localizationService.CurrentLanguage}.mp3"
-            });
+            var ttsText = string.IsNullOrWhiteSpace(restaurant.TextVi)
+                ? restaurant.History
+                : restaurant.TextVi;
+
+            await _audioService.PlayTextAsync(
+                ttsText,
+                _localizationService.CurrentLanguage,
+                restaurant.Name,
+                restaurant.Id);
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
@@ -240,12 +251,9 @@ namespace VinhKhanh.Pages
             });
         }
 
-        private void OnLocalizationLanguageChanged(object? sender, EventArgs e)
+        private async void OnLocalizationLanguageChanged(object? sender, EventArgs e)
         {
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                LoadRestaurants();
-            });
+            await LoadDataFromDatabaseAsync();
         }
     }
 }

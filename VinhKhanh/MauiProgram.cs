@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using ZXing.Net.Maui;
 using VinhKhanh.Pages;
 using VinhKhanh.Services;
+using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 
 namespace VinhKhanh
@@ -18,11 +18,17 @@ namespace VinhKhanh
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 })
-                .UseBarcodeReader()
-                .Services
+                .UseBarcodeReader();
+
+            builder.Services
                 .AddSingleton<SQLiteDbContext>()
+                .AddSingleton<DatabaseService>()
                 .AddSingleton<LocationService>()
+                .AddSingleton<GeofenceService>()
                 .AddSingleton<AudioPlaybackService>()
+                .AddSingleton<TtsService>()
+                .AddSingleton<TranslationService>()
+                .AddSingleton<PlaybackService>()
                 .AddSingleton<LocalizationService>()
                 .AddSingleton<MainPage>()
                 .AddSingleton<ExplorePage>()

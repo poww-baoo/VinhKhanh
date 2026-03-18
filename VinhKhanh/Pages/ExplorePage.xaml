@@ -40,12 +40,12 @@
             <Frame CornerRadius="12" Padding="12,10" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#F5F5F5" Margin="0,8,0,0">
                 <HorizontalStackLayout Spacing="12">
                     <Label Text="🔍" FontSize="18" VerticalOptions="Center"/>
-                    <Entry x:Name="LocationLabel"
+                    <Entry x:Name="SearchEntry"
                            Placeholder="Tìm kiếm quán ăn..."
                            FontSize="14"
                            BackgroundColor="Transparent"
                            HorizontalOptions="FillAndExpand"
-                           IsReadOnly="True"
+                           TextChanged="OnSearchTextChanged"
                            TextColor="#1F1F1F"
                            PlaceholderColor="#999999"/>
                 </HorizontalStackLayout>
@@ -68,7 +68,7 @@
                     <Label Text="Bản đồ khu vực" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F"/>
                     <Frame CornerRadius="12" Padding="0" BorderColor="#E0E0E0" HasShadow="False" HeightRequest="260">
                         <Grid>
-                            <WebView x:Name="TrackAsiaMapWebView" />
+                            <WebView x:Name="TrackAsiaMapWebView" Navigating="OnMapWebViewNavigating" />
 
                             <Button Text="⛶"
                                     Clicked="OnExpandMapClicked"
@@ -93,7 +93,7 @@
                 <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
                     <Label Text="Danh mục" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F" Margin="0,0,0,8"/>
                     <CollectionView x:Name="FilterChipsCollection"
-                                    SelectionMode="Single"
+                                    SelectionMode="None"
                                     HeightRequest="45">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
@@ -105,7 +105,32 @@
                                        BorderColor="#E0E0E0"
                                        HasShadow="False"
                                        BackgroundColor="#F5F5F5">
-                                    <Label Text="{Binding Name}" FontSize="12" TextColor="#1F1F1F"/>
+                                    <Frame.Triggers>
+                                        <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="#FF6B35"/>
+                                            <Setter Property="BorderColor" Value="#FF6B35"/>
+                                        </DataTrigger>
+                                    </Frame.Triggers>
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnCategoryChipTapped" CommandParameter="{Binding .}"/>
+                                    </Frame.GestureRecognizers>
+                                    <HorizontalStackLayout Spacing="4">
+                                        <Label Text="{Binding IconText}" FontSize="12" TextColor="#666666">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="White"/>
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label Text="{Binding Name}" FontSize="12" TextColor="#1F1F1F">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="White"/>
+                                                    <Setter Property="FontAttributes" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </HorizontalStackLayout>
                                 </Frame>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -120,7 +145,7 @@
                     <HorizontalStackLayout HorizontalOptions="FillAndExpand">
                         <Label Text="Quán ăn gần bạn" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
                         <Frame CornerRadius="12" Padding="8,4" BorderColor="Transparent" HasShadow="False" BackgroundColor="#FFF3E0" VerticalOptions="Center">
-                            <Label Text="Sắp xếp ↕️" FontSize="11" TextColor="#FF6B35"/>
+                            <Label x:Name="ResultCountLabel" Text="0 kết quả" FontSize="11" TextColor="#FF6B35"/>
                         </Frame>
                     </HorizontalStackLayout>
                 </StackLayout>
@@ -164,8 +189,8 @@
 
                                         <!-- Distance and Time -->
                                         <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="12">
-                                            <Label Text="📍 0.5 km" FontSize="11" TextColor="#999999"/>
-                                            <Label Text="⏱️ 5-10 phút" FontSize="11" TextColor="#999999"/>
+                                            <Label Text="{Binding CategoryName, StringFormat='📍 {0}'}" FontSize="11" TextColor="#999999"/>
+                                            <Label Text="{Binding YearEstablished, StringFormat='⏱️ Từ năm {0}'}" FontSize="11" TextColor="#999999"/>
                                         </HorizontalStackLayout>
 
                                         <!-- Highlights -->
@@ -219,7 +244,7 @@
               BackgroundColor="#CC000000"
               ZIndex="9999">
             <Grid>
-                <WebView x:Name="TrackAsiaMapFullScreenWebView" />
+                <WebView x:Name="TrackAsiaMapFullScreenWebView" Navigating="OnMapWebViewNavigating" />
 
                 <!-- Nút đóng ở góc trên bên trái -->
                 <Button Text="✕"

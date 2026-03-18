@@ -1,4 +1,5 @@
-﻿using VinhKhanh.Models;
+﻿using Microsoft.Extensions.DependencyInjection;
+using VinhKhanh.Models;
 using VinhKhanh.Services;
 
 namespace VinhKhanh.Pages
@@ -7,6 +8,7 @@ namespace VinhKhanh.Pages
     {
         private readonly Restaurant _restaurant;
         private readonly AudioPlaybackService _audioService;
+        private readonly DatabaseService _databaseService;
 
         private string _selectedAudioLanguage = "vi";
 
@@ -15,10 +17,15 @@ namespace VinhKhanh.Pages
             InitializeComponent();
             _restaurant = restaurant;
             _audioService = audioService ?? new AudioPlaybackService();
+            _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
 
             InitializeAudioLanguage();
             LoadRestaurantData();
+            _ = LoadMenuItemsAsync();
         }
+
+        private static T? ResolveService<T>() where T : class =>
+            Application.Current?.Handler?.MauiContext?.Services.GetService<T>();
 
         private void InitializeAudioLanguage()
         {
@@ -33,8 +40,41 @@ namespace VinhKhanh.Pages
             YearLabel.Text = $"Thành lập: {_restaurant.YearEstablished}";
             RatingLabel.Text = $"⭐ {_restaurant.Rating:F1}";
             HistoryLabel.Text = _restaurant.History;
+            IntroLabel.Text = string.IsNullOrWhiteSpace(_restaurant.TextVi)
+                ? _restaurant.History
+                : _restaurant.TextVi;
             SignatureDishLabel.Text = _restaurant.Name;
             SignatureDishStoryLabel.Text = _restaurant.History;
+        }
+
+        private async Task LoadMenuItemsAsync()
+        {
+            if (!int.TryParse(_restaurant.Id, out var poiId))
+            {
+                MenuCollection.ItemsSource = Array.Empty<PoiMenuItem>();
+                return;
+            }
+
+            try
+            {
+                await _databaseService.InitAsync();
+                var menuItems = await _databaseService.GetMenuItemsAsync(poiId);
+                MenuCollection.ItemsSource = menuItems;
+
+                var signature = menuItems.FirstOrDefault(i => i.IsSignature) ?? menuItems.FirstOrDefault();
+                if (signature is not null)
+                {
+                    SignatureDishLabel.Text = signature.Name;
+                    if (!string.IsNullOrWhiteSpace(signature.Description))
+                    {
+                        SignatureDishStoryLabel.Text = signature.Description;
+                    }
+                }
+            }
+            catch
+            {
+                MenuCollection.ItemsSource = Array.Empty<PoiMenuItem>();
+            }
         }
 
         private void OnAudioOptionClicked(object sender, EventArgs e)
@@ -45,6 +85,7 @@ namespace VinhKhanh.Pages
             }
 
             _selectedAudioLanguage = language;
+            LocalizationService.Instance.CurrentLanguage = language;
             UpdateAudioOptionUI();
         }
 
@@ -66,14 +107,15 @@ namespace VinhKhanh.Pages
 
         private async void OnPlaySignatureDish(object sender, EventArgs e)
         {
-            await _audioService.PlayAudioAsync(new AudioContent
-            {
-                RestaurantId = _restaurant.Id,
-                Language = _selectedAudioLanguage,
-                ContentType = "signature_dish",
-                Title = _restaurant.Name,
-                AudioUrl = $"https://your-server.com/audio/{_restaurant.Id}_signature_{_selectedAudioLanguage}.mp3"
-            });
+            var ttsText = string.IsNullOrWhiteSpace(_restaurant.TextVi)
+                ? _restaurant.History
+                : _restaurant.TextVi;
+
+            await _audioService.PlayTextAsync(
+                ttsText,
+                _selectedAudioLanguage,
+                _restaurant.Name,
+                _restaurant.Id);
         }
 
         private void OnPlayClicked(object sender, EventArgs e)

@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:model="clr-namespace:VinhKhanh.Models"
              x:Class="VinhKhanh.Pages.RestaurantDetailPage"
              Title="Chi Tiết Quán Ăn"> 
 
@@ -26,13 +27,19 @@
                 </VerticalStackLayout>
             </Frame>
 
+            <Frame CornerRadius="12" Padding="12" BorderColor="#1ABC9C">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Giới thiệu" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="IntroLabel" FontSize="12" LineBreakMode="WordWrap"/>
+                </VerticalStackLayout>
+            </Frame>
+
             <Frame CornerRadius="12" Padding="12" BorderColor="#E74C3C">
                 <VerticalStackLayout Spacing="8">
                     <Label Text="Món Đặc Biệt" FontSize="16" FontAttributes="Bold"/>
                     <Label x:Name="SignatureDishLabel" FontSize="14" FontAttributes="Bold"/>
                     <Label x:Name="SignatureDishStoryLabel" FontSize="12" LineBreakMode="WordWrap"/>
 
-                    <!-- Chọn ngôn ngữ audio kiểu 2 option -->
                     <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
                         <Button x:Name="ViOptionButton"
                                 Text="🇻🇳 Tiếng Việt"
@@ -69,14 +76,18 @@
             <Frame CornerRadius="12" Padding="12" BorderColor="#9B59B6">
                 <VerticalStackLayout Spacing="8">
                     <Label Text="Menu Nổi Bật" FontSize="16" FontAttributes="Bold"/>
-                    <CollectionView x:Name="MenuCollection" HeightRequest="150">
+                    <CollectionView x:Name="MenuCollection" HeightRequest="180" EmptyView="Chưa có dữ liệu menu">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame CornerRadius="8" Padding="8" BorderColor="#ECF0F1">
-                                    <Label Text="{Binding Name}" FontSize="12"/>
+                            <DataTemplate x:DataType="model:PoiMenuItem">
+                                <Frame CornerRadius="8" Padding="10" BorderColor="#ECF0F1">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Name}" FontSize="13" FontAttributes="Bold"/>
+                                        <Label Text="{Binding Description}" FontSize="11" TextColor="#666666"/>
+                                        <Label Text="{Binding PriceText}" FontSize="11" TextColor="#FF6B35"/>
+                                    </VerticalStackLayout>
                                 </Frame>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
