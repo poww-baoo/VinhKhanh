@@ -20,13 +20,30 @@ namespace VinhKhanh.Pages
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            RequestCameraPermission();
+            try
+            {
+                // Khởi động scanner
+                QRScannerView.IsDetecting = true;
+                RequestCameraPermission();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"OnAppearing error: {ex}");
+            }
         }
 
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-            QRScannerView?.Handler?.DisconnectHandler();
+            try
+            {
+                QRScannerView.IsDetecting = false;
+                QRScannerView?.Handler?.DisconnectHandler();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"OnDisappearing error: {ex}");
+            }
         }
 
         private async void RequestCameraPermission()
@@ -43,6 +60,11 @@ namespace VinhKhanh.Pages
                 if (cameraStatus == PermissionStatus.Granted)
                 {
                     Debug.WriteLine("Camera permission granted");
+                    // Bắt đầu quét
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        QRScannerView.IsDetecting = true;
+                    });
                 }
                 else
                 {
@@ -58,28 +80,52 @@ namespace VinhKhanh.Pages
 
         private void OnBarcodesDetected(object sender, BarcodeDetectionEventArgs e)
         {
-            if (_isProcessing) return;
-
-            var barcode = e.Results.FirstOrDefault();
-            if (barcode == null) return;
-
-            var result = barcode.Value;
-
-            if (result == _lastScannedResult) return;
-
-            _isProcessing = true;
-            _lastScannedResult = result;
-
-            MainThread.BeginInvokeOnMainThread(async () =>
+            try
             {
-                QRScannerView.IsEnabled = false;
-                await DisplayAlert("Quét Mã QR", $"Kết quả: {result}", "OK");
-                QRScannerView.IsEnabled = true;
+                if (_isProcessing) return;
+                if (e.Results == null || e.Results.Count() == 0) return;
+
+                var barcode = e.Results.FirstOrDefault();
+                if (barcode == null) return;
+
+                var result = barcode.Value;
+                
+                if (string.IsNullOrEmpty(result)) return;
+                if (result == _lastScannedResult) return;
+
+                _isProcessing = true;
+                _lastScannedResult = result;
+                
+                Debug.WriteLine($"QR Code detected: {result}");
+
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        QRScannerView.IsDetecting = false;
+                        await DisplayAlert("Quét Mã QR Thành Công", $"Kết quả:\n{result}", "OK");
+                        
+                        // Reset để quét lại
+                        _isProcessing = false;
+                        _lastScannedResult = null;
+                        QRScannerView.IsDetecting = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"DisplayAlert error: {ex}");
+                        _isProcessing = false;
+                        QRScannerView.IsDetecting = true;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"OnBarcodesDetected error: {ex}");
                 _isProcessing = false;
-            });
+            }
         }
 
-        private void OnFlashlightToggleClicked(object sender, EventArgs e)
+        private async void OnFlashlightToggleClicked(object sender, EventArgs e)
         {
             try
             {
@@ -88,12 +134,19 @@ namespace VinhKhanh.Pages
                     ? Color.FromArgb("#FFC107") 
                     : Color.FromArgb("#FF6B35");
                 
-                #if ANDROID
-                if (_isFlashlightOn)
-                    Flashlight.Default.TurnOnAsync();
-                else
-                    Flashlight.Default.TurnOffAsync();
-                #endif
+#if ANDROID
+                try
+                {
+                    if (_isFlashlightOn)
+                        await Flashlight.Default.TurnOnAsync();
+                    else
+                        await Flashlight.Default.TurnOffAsync();
+                }
+                catch (FeatureNotSupportedException)
+                {
+                    await DisplayAlert("Lỗi", "Thiết bị không hỗ trợ đèn pin", "OK");
+                }
+#endif
             }
             catch (Exception ex)
             {
