@@ -134,7 +134,7 @@ public partial class ExplorePage : ContentPage
 
             query = query.Where(r =>
             {
-                var searchBlob = NormalizeForSearch($"{r.Name} {r.History} {r.TextVi} {r.Highlights} {r.CategoryName}");
+                var searchBlob = NormalizeForSearch($"{r.Name} {r.History} {r.Address} {r.TextVi} {r.TextEn} {r.TextZh} {r.TextJa} {r.TextRu} {r.TextFr} {r.Highlights} {r.CategoryName}");
                 return searchBlob.Contains(normalizedKeyword, StringComparison.Ordinal);
             });
         }
@@ -221,6 +221,7 @@ public partial class ExplorePage : ContentPage
         {
             id = r.Id,
             name = EscapeHtml(r.Name),
+            address = EscapeHtml(r.Address),
             highlights = EscapeHtml(r.Highlights),
             rating = r.Rating,
             latitude = r.Latitude,
@@ -286,6 +287,7 @@ public partial class ExplorePage : ContentPage
         const popupHtml =
           '<div class=""popup-title"">' + (r.name ?? '') + '</div>' +
           '<p class=""popup-sub"">⭐ ' + Number(r.rating).toFixed(1) + '</p>' +
+          '<p class=""popup-sub"">📍 ' + (r.address ?? '') + '</p>' +
           '<p class=""popup-sub"">' + (r.highlights ?? '') + '</p>' +
           '<a class=""popup-link"" href=""' + detailUrl + '"">' + detailsText + '</a>';
 
@@ -327,9 +329,7 @@ public partial class ExplorePage : ContentPage
         }
 
         var language = _localizationService.CurrentLanguage;
-        var ttsText = string.IsNullOrWhiteSpace(restaurant.TextVi)
-            ? restaurant.History
-            : restaurant.TextVi;
+        var ttsText = restaurant.GetTextByLanguage(language);
 
         await _audioService.PlayTextAsync(
             ttsText,

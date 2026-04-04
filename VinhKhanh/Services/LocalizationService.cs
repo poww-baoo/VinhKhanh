@@ -46,6 +46,8 @@ namespace VinhKhanh.Services
                     { "SignatureDish", "Món Đặc Biệt" },
                     { "Menu", "Thực Đơn" },
                     { "Audio", "Âm Thanh" },
+                    { "Address", "Địa chỉ" },
+                    { "NarrationLanguage", "Ngôn ngữ thuyết minh" },
                     { "Vi", "Tiếng Việt" },
                     { "En", "English" },
                     
@@ -132,6 +134,8 @@ namespace VinhKhanh.Services
                     { "SignatureDish", "Signature Dish" },
                     { "Menu", "Menu" },
                     { "Audio", "Audio" },
+                    { "Address", "Address" },
+                    { "NarrationLanguage", "Narration language" },
                     { "Vi", "Vietnamese" },
                     { "En", "English" },
                     
@@ -214,6 +218,6 @@ namespace VinhKhanh.Services
             return key;
         }
 
-        public List<string> SupportedLanguages => new() { "vi", "en", "zh", "ja", "ko" };
+        public List<string> SupportedLanguages => new() { "vi", "en", "zh", "ja" };
     }
 }

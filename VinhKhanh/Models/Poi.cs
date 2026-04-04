@@ -15,8 +15,24 @@ public class Poi
 
     public string History { get; set; } = "";
 
-    // Chỉ lưu tiếng Việt — tiếng Anh dịch qua API
+    public string Address { get; set; } = "";
+
     public string TextVi { get; set; } = "";
+    public string TextEn { get; set; } = "";
+    public string TextZh { get; set; } = "";
+
+    [Column("TextJp")]
+    public string TextJp { get; set; } = "";
+
+    [Ignore]
+    public string TextJa
+    {
+        get => TextJp;
+        set => TextJp = value;
+    }
+
+    public string TextRu { get; set; } = "";
+    public string TextFr { get; set; } = "";
 
     public double Lat { get; set; }
     public double Lng { get; set; }
@@ -26,6 +42,26 @@ public class Poi
     public double Rating { get; set; }
     public string ImageFileName { get; set; } = "";
     public bool IsActive { get; set; } = true;
+
+    public string GetTextByLanguage(string language)
+    {
+        var normalized = (language ?? "vi").Trim().ToLowerInvariant();
+
+        var text = normalized switch
+        {
+            "en" => TextEn,
+            "zh" => TextZh,
+            "ja" => TextJp,
+            "jp" => TextJp,
+            "ru" => TextRu,
+            "fr" => TextFr,
+            _ => TextVi
+        };
+
+        return string.IsNullOrWhiteSpace(text)
+            ? (string.IsNullOrWhiteSpace(TextVi) ? History : TextVi)
+            : text;
+    }
 
     [Ignore] public string RatingText => $"★ {Rating:F1}";
     [Ignore] public string YearText => $"Từ năm {YearEstablished}";

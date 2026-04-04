@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Net.Http.Json;
 
 namespace VinhKhanh.Services
 {
@@ -15,11 +14,6 @@ namespace VinhKhanh.Services
     public class AudioPlaybackService
     {
         private readonly TtsService _ttsService;
-        private readonly HttpClient _httpClient = new()
-        {
-            Timeout = TimeSpan.FromSeconds(10)
-        };
-        private const string TranslationApiUrl = "https://api.mymemory.translated.net/get";
         private AudioContent? _currentlyPlaying;
         private bool _isPlaying;
 
@@ -96,13 +90,7 @@ namespace VinhKhanh.Services
                 _isPlaying = true;
                 PlaybackStarted?.Invoke(this, content);
 
-                var textToSpeak = text;
-                if (language.Equals("en", StringComparison.OrdinalIgnoreCase))
-                {
-                    textToSpeak = await TranslateToEnglishAsync(text) ?? text;
-                }
-
-                await _ttsService.SpeakAsync(textToSpeak, language);
+                await _ttsService.SpeakAsync(text, language);
 
                 _isPlaying = false;
                 PlaybackCompleted?.Invoke(this, content);
@@ -112,43 +100,6 @@ namespace VinhKhanh.Services
                 Debug.WriteLine($"PlayTextAsync error: {ex.Message}");
                 _isPlaying = false;
             }
-        }
-
-        private async Task<string?> TranslateToEnglishAsync(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
-
-            try
-            {
-                var url = $"{TranslationApiUrl}?q={Uri.EscapeDataString(text)}&langpair=vi|en";
-                var response = await _httpClient.GetFromJsonAsync<MyMemoryResponse>(url);
-
-                if (response?.ResponseStatus == 200 &&
-                    !string.IsNullOrWhiteSpace(response.ResponseData?.TranslatedText))
-                {
-                    return response.ResponseData.TranslatedText;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"TranslateToEnglishAsync error: {ex.Message}");
-            }
-
-            return null;
-        }
-
-        private sealed class MyMemoryResponse
-        {
-            public ResponseData? ResponseData { get; set; }
-            public int ResponseStatus { get; set; }
-        }
-
-        private sealed class ResponseData
-        {
-            public string? TranslatedText { get; set; }
         }
 
         public void Pause()

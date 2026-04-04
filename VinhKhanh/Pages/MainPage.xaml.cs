@@ -125,7 +125,13 @@ namespace VinhKhanh.Pages
                 Name = poi.Name,
                 YearEstablished = poi.YearEstablished,
                 History = poi.History,
+                Address = poi.Address,
                 TextVi = poi.TextVi,
+                TextEn = poi.TextEn,
+                TextZh = poi.TextZh,
+                TextJa = poi.TextJa,
+                TextRu = poi.TextRu,
+                TextFr = poi.TextFr,
                 Highlights = highlights,
                 Rating = poi.Rating,
                 Latitude = poi.Lat,
@@ -236,11 +242,8 @@ namespace VinhKhanh.Pages
 
         private async void OnEnteredGeofence(object? sender, Restaurant restaurant)
         {
-            var ttsText = string.IsNullOrWhiteSpace(restaurant.TextVi)
-                ? restaurant.History
-                : restaurant.TextVi;
-
             var language = _localizationService.CurrentLanguage;
+            var ttsText = restaurant.GetTextByLanguage(language);
             var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
 
             await _audioService.PlayTextAsync(

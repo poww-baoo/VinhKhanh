@@ -8,7 +8,13 @@
         public string Name { get; set; } = string.Empty;
         public int YearEstablished { get; set; }
         public string History { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
         public string TextVi { get; set; } = string.Empty;
+        public string TextEn { get; set; } = string.Empty;
+        public string TextZh { get; set; } = string.Empty;
+        public string TextJa { get; set; } = string.Empty;
+        public string TextRu { get; set; } = string.Empty;
+        public string TextFr { get; set; } = string.Empty;
         public string Highlights { get; set; } = string.Empty;
         public double Rating { get; set; }
         public double Latitude { get; set; }
@@ -20,6 +26,25 @@
         public List<RestaurantMenuItem>? HighlightMenuItems { get; set; }
         public List<Promotion>? Promotions { get; set; }
         public Dictionary<string, RestaurantLocalized>? LocalizedContent { get; set; }
+
+        public string GetTextByLanguage(string language)
+        {
+            var normalized = (language ?? "vi").Trim().ToLowerInvariant();
+
+            var text = normalized switch
+            {
+                "en" => TextEn,
+                "zh" => TextZh,
+                "ja" => TextJa,
+                "ru" => TextRu,
+                "fr" => TextFr,
+                _ => TextVi
+            };
+
+            return string.IsNullOrWhiteSpace(text)
+                ? (string.IsNullOrWhiteSpace(TextVi) ? History : TextVi)
+                : text;
+        }
     }
 
     public class SignatureDish

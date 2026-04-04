@@ -117,7 +117,13 @@ namespace VinhKhanh.Services
                 Name = poi.Name,
                 YearEstablished = poi.YearEstablished,
                 History = poi.History,
+                Address = poi.Address,
                 TextVi = poi.TextVi,
+                TextEn = poi.TextEn,
+                TextZh = poi.TextZh,
+                TextJa = poi.TextJa,
+                TextRu = poi.TextRu,
+                TextFr = poi.TextFr,
                 Highlights = string.Empty, // Không có trong Poi
                 Rating = poi.Rating,
                 Latitude = poi.Lat,

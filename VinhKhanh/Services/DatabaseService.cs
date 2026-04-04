@@ -8,6 +8,9 @@ public class DatabaseService
     private SQLiteAsyncConnection? _db;
     private bool _initialized;
 
+    private const string SeedDbVersionKey = "SeedDbVersion";
+    private const int CurrentSeedDbVersion = 5; // tăng số này mỗi lần cập nhật file vinhkhanh.db
+
     private static string DbPath =>
         Path.Combine(FileSystem.AppDataDirectory, "vinhkhanh.db");
 
@@ -15,17 +18,25 @@ public class DatabaseService
     {
         if (_initialized) return;
 
-        if (!File.Exists(DbPath))
+        var savedVersion = Preferences.Get(SeedDbVersionKey, 0);
+        var needCopySeedDb = !File.Exists(DbPath) || savedVersion < CurrentSeedDbVersion;
+
+        if (needCopySeedDb)
         {
+            if (File.Exists(DbPath))
+                File.Delete(DbPath);
+
             await using var stream =
                 await FileSystem.OpenAppPackageFileAsync("vinhkhanh.db");
             await using var dest = File.Create(DbPath);
             await stream.CopyToAsync(dest);
+
+            Preferences.Set(SeedDbVersionKey, CurrentSeedDbVersion);
         }
 
-        _db = new SQLiteAsyncConnection(DbPath,
-            SQLiteOpenFlags.ReadWrite |
-            SQLiteOpenFlags.SharedCache);
+        _db = new SQLiteAsyncConnection(
+            DbPath,
+            SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.SharedCache);
 
         await _db.CreateTableAsync<PlaybackLog>();
         await _db.CreateTableAsync<TranslationCache>();
