@@ -8,42 +8,83 @@
 
     <Grid RowDefinitions="*,60" RowSpacing="0">
 
-        <!-- QR Scanner -->
+        <!-- QR Scanner Container -->
         <Frame Grid.Row="0" 
                CornerRadius="0" 
                Padding="0" 
                HasShadow="False" 
                BorderColor="Transparent"
                BackgroundColor="#1F1F1F">
-            <Grid>
-                <!-- ZXing Camera View -->
-                <zxing:CameraBarcodeReaderView x:Name="QRScannerView"
-                                               BarcodesDetected="OnBarcodesDetected"
-                                               CameraLocation="Rear"
-                                               IsDetecting="True"
-                                               IsEnabled="True"/>
+            
+            <Grid BackgroundColor="Black">
+                
+                <!-- ZXing Camera View - Main Scanner -->
+                <!-- QUAN TRỌNG: Đặt ở vị trí 0,0 để không bị chặn bởi overlay -->
+                <zxing:CameraBarcodeReaderView 
+                    x:Name="QRScannerView"
+                    BarcodesDetected="OnBarcodesDetected"
+                    CameraLocation="Rear"
+                    IsDetecting="True"
+                    IsEnabled="True"
+                    Grid.Row="0"
+                    Grid.Column="0"/>
 
-                <!-- Overlay Scanner Frame -->
-                <Grid RowDefinitions="*,250,*" ColumnDefinitions="*,250,*" 
+                <!-- Overlay Scanner Frame - Phải có InputTransparent="True" để không chặn camera -->
+                <Grid RowDefinitions="*,250,*" 
+                      ColumnDefinitions="*,250,*" 
                       InputTransparent="True"
-                      BackgroundColor="Transparent">
-                    <BoxView Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Opacity="0.4" BackgroundColor="Black"/>
-                    <BoxView Grid.Row="0" Grid.Column="0" Opacity="0.4" BackgroundColor="Black"/>
-                    <BoxView Grid.Row="0" Grid.Column="2" Opacity="0.4" BackgroundColor="Black"/>
-                    <BoxView Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Opacity="0.4" BackgroundColor="Black"/>
-                    <BoxView Grid.Row="2" Grid.Column="0" Opacity="0.4" BackgroundColor="Black"/>
-                    <BoxView Grid.Row="2" Grid.Column="2" Opacity="0.4" BackgroundColor="Black"/>
+                      BackgroundColor="Transparent"
+                      Grid.Row="0"
+                      Grid.Column="0">
+                    
+                    <!-- Góc trên trái - Tối -->
+                    <BoxView Grid.Row="0" Grid.Column="0" 
+                             Opacity="0.4" 
+                             BackgroundColor="Black"/>
+                    
+                    <!-- Góc trên giữa - Tối -->
+                    <BoxView Grid.Row="0" Grid.Column="1" 
+                             Opacity="0.4" 
+                             BackgroundColor="Black"/>
+                    
+                    <!-- Góc trên phải - Tối -->
+                    <BoxView Grid.Row="0" Grid.Column="2" 
+                             Opacity="0.4" 
+                             BackgroundColor="Black"/>
 
+                    <!-- Khung quét ở giữa - Trong suốt để thấy camera -->
                     <Border Grid.Row="1" Grid.Column="1"
                             StrokeShape="RoundRectangle 12"
                             Padding="0"
                             Stroke="#FF6B35"
                             BackgroundColor="Transparent"
-                            StrokeThickness="2"/>
+                            StrokeThickness="3"/>
+
+                    <!-- Góc dưới trái - Tối -->
+                    <BoxView Grid.Row="2" Grid.Column="0" 
+                             Opacity="0.4" 
+                             BackgroundColor="Black"/>
+                    
+                    <!-- Góc dưới giữa - Tối -->
+                    <BoxView Grid.Row="2" Grid.Column="1" 
+                             Opacity="0.4" 
+                             BackgroundColor="Black"/>
+                    
+                    <!-- Góc dưới phải - Tối -->
+                    <BoxView Grid.Row="2" Grid.Column="2" 
+                             Opacity="0.4" 
+                             BackgroundColor="Black"/>
                 </Grid>
 
-                <!-- Flashlight Button -->
-                <StackLayout Padding="16" VerticalOptions="End" HorizontalOptions="End" Spacing="8">
+                <!-- Flashlight Button - Phải ở trên cùng -->
+                <StackLayout Padding="16" 
+                             VerticalOptions="End" 
+                             HorizontalOptions="End" 
+                             Spacing="8"
+                             Grid.Row="0"
+                             Grid.Column="0"
+                             InputTransparent="False">
+                    
                     <Button x:Name="FlashlightToggleButton" 
                             Text="🔦" 
                             Clicked="OnFlashlightToggleClicked"
@@ -59,16 +100,19 @@
             </Grid>
         </Frame>
 
-        <!-- Bottom QR Icon -->
+        <!-- Bottom QR Instruction -->
         <Frame Grid.Row="1" 
                CornerRadius="0" 
                Padding="0" 
                HasShadow="False" 
                BorderColor="Transparent"
                BackgroundColor="#1F1F1F">
+            
             <Grid HorizontalOptions="Center" VerticalOptions="Center">
-                <Label Text="📱" 
-                       FontSize="28" 
+                <Label x:Name="InstructionLabel"
+                       Text="📱 Point camera at QR code" 
+                       FontSize="14" 
+                       TextColor="White"
                        HorizontalOptions="Center" 
                        VerticalOptions="Center"/>
             </Grid>

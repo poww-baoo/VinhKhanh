@@ -23,6 +23,7 @@ namespace VinhKhanh
             builder.Services
                 .AddSingleton<SQLiteDbContext>()
                 .AddSingleton<DatabaseService>()
+                .AddSingleton<QRCodeService>()
                 .AddSingleton<LocationService>()
                 .AddSingleton<GeofenceService>()
                 .AddSingleton<AudioPlaybackService>()

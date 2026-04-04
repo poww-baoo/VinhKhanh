@@ -1,21 +1,27 @@
 ﻿<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<!-- Location Permissions -->
+	<!-- ========== LOCATION PERMISSIONS ========== -->
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+	
+	<!-- ========== CAMERA & FLASHLIGHT PERMISSIONS ========== -->
 	<uses-permission android:name="android.permission.CAMERA" />
-	<uses-permission android:name="android.perrmisson.FLASHLIGHT" /> 
-	<!-- Network Permissions -->
+	<uses-permission android:name="android.permission.FLASHLIGHT" />
+	
+	<!-- ========== NETWORK PERMISSIONS ========== -->
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	
-	<!-- Audio Permissions (for audio playback/recording) -->
+	<!-- ========== AUDIO PERMISSIONS ========== -->
 	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 	
-	<!-- Foreground Service Permission (for background location tracking) -->
+	<!-- ========== FOREGROUND SERVICE PERMISSIONS ========== -->
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true">
+	<application android:allowBackup="true" 
+	             android:icon="@mipmap/appicon" 
+	             android:roundIcon="@mipmap/appicon_round" 
+	             android:supportsRtl="true">
 	</application>
 </manifest>

@@ -46,7 +46,7 @@ namespace VinhKhanh.Pages
             _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
             _locationService = ResolveService<LocationService>() ?? new LocationService();
             _audioService = ResolveService<AudioPlaybackService>() ?? new AudioPlaybackService();
-            _localizationService = LocalizationService.Instance;
+            _localizationService = ResolveService<LocalizationService>() ?? LocalizationService.Instance;
 
             _locationService.LocationUpdated += OnLocationUpdated;
             _locationService.EnteredGeofence += OnEnteredGeofence;
@@ -61,6 +61,7 @@ namespace VinhKhanh.Pages
             _settingsPage = new SettingsPage();
 
             CachePageContents();
+            UpdateTabLabels();
             ShowTabContent("explore");
 
             Loaded += OnLoaded;
@@ -98,7 +99,11 @@ namespace VinhKhanh.Pages
             {
                 await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
-                    await DisplayAlert("Lỗi dữ liệu", $"Không thể đọc dữ liệu từ vinhkhanh.db: {ex.Message}", "OK");
+                    var language = _localizationService.CurrentLanguage;
+                    await DisplayAlert(
+                        _localizationService.GetString("DataError", language),
+                        $"{_localizationService.GetString("CannotLoadData", language)}: {ex.Message}",
+                        _localizationService.GetString("OK", language));
                 });
             }
         }
@@ -212,7 +217,11 @@ namespace VinhKhanh.Pages
             {
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
-                    await DisplayAlert("Lỗi", $"Không thể tải trang: {ex.Message}", "OK");
+                    var language = _localizationService.CurrentLanguage;
+                    await DisplayAlert(
+                        _localizationService.GetString("Error", language),
+                        $"{_localizationService.GetString("CannotLoadPage", language)}: {ex.Message}",
+                        _localizationService.GetString("OK", language));
                 });
             }
         }
@@ -231,15 +240,18 @@ namespace VinhKhanh.Pages
                 ? restaurant.History
                 : restaurant.TextVi;
 
+            var language = _localizationService.CurrentLanguage;
+            var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
+
             await _audioService.PlayTextAsync(
                 ttsText,
-                _localizationService.CurrentLanguage,
+                language,
                 restaurant.Name,
                 restaurant.Id);
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                _trackingPage.UpdateStatus($"Đang phát thuyết minh: {restaurant.Name}");
+                _trackingPage.UpdateStatus($"{playingText}: {restaurant.Name}");
             });
         }
 
@@ -247,13 +259,27 @@ namespace VinhKhanh.Pages
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                _trackingPage.UpdateStatus("Phát thuyết minh xong");
+                var language = _localizationService.CurrentLanguage;
+                var completedText = _localizationService.GetString("Tracking_Status_Completed", language);
+                _trackingPage.UpdateStatus(completedText);
             });
         }
 
         private async void OnLocalizationLanguageChanged(object? sender, EventArgs e)
         {
-            await LoadDataFromDatabaseAsync();
+            UpdateTabLabels();
+            LoadDataFromDatabaseAsync();
+        }
+
+        private void UpdateTabLabels()
+        {
+            var language = _localizationService.CurrentLanguage;
+            
+            ((Label)ExploreTab.Children[1]).Text = _localizationService.GetString("Explore", language);
+            ((Label)SavedTab.Children[1]).Text = _localizationService.GetString("Saved", language);
+            ((Label)TrackingTab.Children[1]).Text = _localizationService.GetString("Tracking", language);
+            ((Label)QRCodeTab.Children[1]).Text = _localizationService.GetString("QRCode", language);
+            ((Label)SettingsTab.Children[1]).Text = _localizationService.GetString("Settings", language);
         }
     }
 }

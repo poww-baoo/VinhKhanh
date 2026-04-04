@@ -9,11 +9,44 @@ public partial class TrackingPage : ContentPage
 	private List<Restaurant> _restaurants = new();
 	private bool _isTrackingEnabled = false;
 	private LocationService? _locationService;
+	private readonly LocalizationService _localizationService;
 
 	public TrackingPage()
 	{
 		InitializeComponent();
+		_localizationService = LocalizationService.Instance;
+		_localizationService.LanguageChanged += OnLanguageChangedEvent;
 		RestaurantsCollection.ItemsSource = _restaurants;
+		UpdateUI();
+	}
+
+	private void OnLanguageChangedEvent(object? sender, EventArgs e)
+	{
+		UpdateUI();
+	}
+
+	private void UpdateUI()
+	{
+		var language = _localizationService.CurrentLanguage;
+
+		Title = _localizationService.GetString("Tracking", language);
+
+		CurrentLocationTitleLabel.Text = _localizationService.GetString("CurrentLocationTracking", language);
+		StatusTitleLabel.Text = _localizationService.GetString("Status", language);
+		NearbyRestaurantsTitleLabel.Text = _localizationService.GetString("NearbyRestaurants", language);
+
+		if (_currentLocation is not null)
+		{
+			LocationLabel.Text =
+				$"{_localizationService.GetString("Latitude", language)}: {_currentLocation.Latitude:F4}, " +
+				$"{_localizationService.GetString("Longitude", language)}: {_currentLocation.Longitude:F4}";
+		}
+		else
+		{
+			LocationLabel.Text = _localizationService.GetString("WaitingGPS", language);
+		}
+
+		UpdateTrackingUI();
 	}
 
 	public void SetRestaurants(List<Restaurant> restaurants)
@@ -44,17 +77,19 @@ public partial class TrackingPage : ContentPage
 
 	private void UpdateTrackingUI()
 	{
+		var language = _localizationService.CurrentLanguage;
+
 		if (_isTrackingEnabled)
 		{
-			TrackingToggleButton.Text = "⏸️ Tắt Theo Dõi";
+			TrackingToggleButton.Text = _localizationService.GetString("StopTracking", language);
 			TrackingToggleButton.BackgroundColor = Color.FromArgb("#E74C3C");
-			StatusLabel.Text = "Đang theo dõi vị trí...";
+			StatusLabel.Text = _localizationService.GetString("Tracking_Enabled", language);
 		}
 		else
 		{
-			TrackingToggleButton.Text = "▶️ Bật Theo Dõi";
+			TrackingToggleButton.Text = _localizationService.GetString("StartTracking", language);
 			TrackingToggleButton.BackgroundColor = Color.FromArgb("#FF6B35");
-			StatusLabel.Text = "Sẵn sàng";
+			StatusLabel.Text = _localizationService.GetString("Ready", language);
 		}
 	}
 
@@ -67,7 +102,11 @@ public partial class TrackingPage : ContentPage
 				await _locationService.StartTrackingAsync(_restaurants);
 				MainThread.BeginInvokeOnMainThread(() =>
 				{
-				DisplayAlert("Thành công", "Đã bật theo dõi vị trí", "OK");
+					var language = _localizationService.CurrentLanguage;
+					DisplayAlert(
+						_localizationService.GetString("TrackingSuccess", language),
+						_localizationService.GetString("TrackingStarted", language),
+						_localizationService.GetString("OK", language));
 				});
 			}
 		}
@@ -75,7 +114,11 @@ public partial class TrackingPage : ContentPage
 		{
 			MainThread.BeginInvokeOnMainThread(() =>
 			{
-				DisplayAlert("Lỗi", $"Không thể bật theo dõi: {ex.Message}", "OK");
+				var language = _localizationService.CurrentLanguage;
+				DisplayAlert(
+					_localizationService.GetString("TrackingError", language),
+					$"{_localizationService.GetString("StartTrackingError", language)}: {ex.Message}",
+					_localizationService.GetString("OK", language));
 				_isTrackingEnabled = false;
 				UpdateTrackingUI();
 			});
@@ -91,7 +134,11 @@ public partial class TrackingPage : ContentPage
 				_locationService.StopTracking();
 				MainThread.BeginInvokeOnMainThread(() =>
 				{
-					DisplayAlert("Thành công", "Đã tắt theo dõi vị trí", "OK");
+					var language = _localizationService.CurrentLanguage;
+					DisplayAlert(
+						_localizationService.GetString("TrackingSuccess", language),
+						_localizationService.GetString("TrackingStopped", language),
+						_localizationService.GetString("OK", language));
 				});
 			}
 		}
@@ -99,7 +146,11 @@ public partial class TrackingPage : ContentPage
 		{
 			MainThread.BeginInvokeOnMainThread(() =>
 			{
-				DisplayAlert("Lỗi", $"Không thể tắt theo dõi: {ex.Message}", "OK");
+				var language = _localizationService.CurrentLanguage;
+				DisplayAlert(
+					_localizationService.GetString("TrackingError", language),
+					$"{_localizationService.GetString("StopTrackingError", language)}: {ex.Message}",
+					_localizationService.GetString("OK", language));
 			});
 		}
 	}
@@ -108,14 +159,19 @@ public partial class TrackingPage : ContentPage
 	{
 		try
 		{
+			var language = _localizationService.CurrentLanguage;
 			_currentLocation = location;
-			LocationLabel.Text = $"Vĩ độ: {location.Latitude:F4}, Kinh độ: {location.Longitude:F4}";
+			LocationLabel.Text = $"{_localizationService.GetString("Latitude", language)}: {location.Latitude:F4}, {_localizationService.GetString("Longitude", language)}: {location.Longitude:F4}";
 		}
 		catch (Exception ex)
 		{
 			MainThread.BeginInvokeOnMainThread(() =>
 			{
-				DisplayAlert("Lỗi", $"Lỗi cập nhật vị trí: {ex.Message}", "OK");
+				var language = _localizationService.CurrentLanguage;
+				DisplayAlert(
+					_localizationService.GetString("Error", language),
+					$"{_localizationService.GetString("LocationError", language)}: {ex.Message}",
+					_localizationService.GetString("OK", language));
 			});
 		}
 	}
@@ -131,7 +187,11 @@ public partial class TrackingPage : ContentPage
 		{
 			MainThread.BeginInvokeOnMainThread(() =>
 			{
-				DisplayAlert("Lỗi", $"Lỗi cập nhật trạng thái: {ex.Message}", "OK");
+				var language = _localizationService.CurrentLanguage;
+				DisplayAlert(
+					_localizationService.GetString("Error", language),
+					$"{_localizationService.GetString("StatusError", language)}: {ex.Message}",
+					_localizationService.GetString("OK", language));
 			});
 		}
 	}

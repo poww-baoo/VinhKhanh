@@ -15,6 +15,7 @@ public partial class ExplorePage : ContentPage
     private const string MapLibreJsUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
 
     private readonly AudioPlaybackService _audioService;
+    private readonly LocalizationService _localizationService;
 
     private readonly List<Restaurant> _allRestaurants = new();
     private readonly List<Restaurant> _filteredRestaurants = new();
@@ -28,7 +29,55 @@ public partial class ExplorePage : ContentPage
     {
         InitializeComponent();
         _audioService = new AudioPlaybackService();
+        _localizationService = LocalizationService.Instance;
+        _localizationService.LanguageChanged += OnLanguageChangedEvent;
+        UpdateUI();
         RenderTrackAsiaMap();
+    }
+
+    private void OnLanguageChangedEvent(object? sender, EventArgs e)
+    {
+        UpdateUI();
+        ApplyFilters();
+    }
+
+    private void UpdateUI()
+    {
+        var language = _localizationService.CurrentLanguage;
+        
+        Title = _localizationService.GetString("Explore", language);
+        SearchEntry.Placeholder = _localizationService.GetString("SearchPlaceholder", language);
+        
+        // Update labels in XAML (need to find them by name)
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            try
+            {
+                // Header labels
+                if (FindByName("StreetFoodLabel") is Label streetFoodLabel)
+                    streetFoodLabel.Text = _localizationService.GetString("StreetFood", language);
+                
+                // Map section
+                if (FindByName("MapAreaLabel") is Label mapAreaLabel)
+                    mapAreaLabel.Text = _localizationService.GetString("MapArea", language);
+                
+                // Categories section
+                if (FindByName("CategoriesLabel") is Label categoriesLabel)
+                    categoriesLabel.Text = _localizationService.GetString("Categories", language);
+                
+                // Restaurants header
+                if (FindByName("RestaurantsNearYouLabel") is Label restaurantsLabel)
+                    restaurantsLabel.Text = _localizationService.GetString("RestaurantsNearYou", language);
+                
+                // Current location
+                if (FindByName("LocationInfoLabel") is Label locationLabel)
+                    locationLabel.Text = _localizationService.GetString("CurrentLocation", language);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating UI: {ex.Message}");
+            }
+        });
     }
 
     public void SetCategories(List<Category> categories)
@@ -96,7 +145,9 @@ public partial class ExplorePage : ContentPage
         RestaurantsCollection.ItemsSource = null;
         RestaurantsCollection.ItemsSource = _filteredRestaurants;
 
-        ResultCountLabel.Text = $"{_filteredRestaurants.Count} kết quả";
+        var language = _localizationService.CurrentLanguage;
+        var resultText = _localizationService.GetString("Results", language);
+        ResultCountLabel.Text = $"{_filteredRestaurants.Count} {resultText}";
         RenderTrackAsiaMap();
     }
 
@@ -177,6 +228,9 @@ public partial class ExplorePage : ContentPage
         }).ToList();
 
         var restaurantsJson = JsonSerializer.Serialize(restaurantPayload);
+        var language = _localizationService.CurrentLanguage;
+        var detailsText = _localizationService.GetString("ViewDetails", language);
+        var mapNotLoadedText = _localizationService.GetString("MapNotLoaded", language);
 
         var html = @"
 <!DOCTYPE html>
@@ -200,6 +254,8 @@ public partial class ExplorePage : ContentPage
   <script>
     const apiKey = '__API_KEY__';
     const restaurants = __RESTAURANTS_JSON__;
+    const detailsText = '__DETAILS_TEXT__';
+    const mapNotLoadedText = '__MAP_NOT_LOADED_TEXT__';
 
     function getMapSdk() {
       if (window.trackasia && window.trackasia.Map) return window.trackasia;
@@ -210,7 +266,7 @@ public partial class ExplorePage : ContentPage
     function initMap() {
       const sdk = getMapSdk();
       if (!sdk) {
-        document.body.innerHTML = '<div style=""padding:12px;color:#B00020;font-family:sans-serif;"">Không tải được Map SDK.</div>';
+        document.body.innerHTML = '<div style=""padding:12px;color:#B00020;font-family:sans-serif;"">' + mapNotLoadedText + '</div>';
         return;
       }
 
@@ -231,7 +287,7 @@ public partial class ExplorePage : ContentPage
           '<div class=""popup-title"">' + (r.name ?? '') + '</div>' +
           '<p class=""popup-sub"">⭐ ' + Number(r.rating).toFixed(1) + '</p>' +
           '<p class=""popup-sub"">' + (r.highlights ?? '') + '</p>' +
-          '<a class=""popup-link"" href=""' + detailUrl + '"">Xem chi tiết</a>';
+          '<a class=""popup-link"" href=""' + detailUrl + '"">' + detailsText + '</a>';
 
         const popup = new sdk.Popup({ offset: 20 }).setHTML(popupHtml);
         new sdk.Marker({ color: '#FF6B35' })
@@ -258,7 +314,9 @@ public partial class ExplorePage : ContentPage
             .Replace("__API_KEY__", TrackAsiaApiKey)
             .Replace("__RESTAURANTS_JSON__", restaurantsJson)
             .Replace("__CENTER_LAT__", centerLat.ToString(CultureInfo.InvariantCulture))
-            .Replace("__CENTER_LNG__", centerLng.ToString(CultureInfo.InvariantCulture));
+            .Replace("__CENTER_LNG__", centerLng.ToString(CultureInfo.InvariantCulture))
+            .Replace("__DETAILS_TEXT__", EscapeHtml(detailsText))
+            .Replace("__MAP_NOT_LOADED_TEXT__", EscapeHtml(mapNotLoadedText));
     }
 
     private async void OnPlayAudioClicked(object sender, EventArgs e)
@@ -268,7 +326,7 @@ public partial class ExplorePage : ContentPage
             return;
         }
 
-        var language = LocalizationService.Instance.CurrentLanguage;
+        var language = _localizationService.CurrentLanguage;
         var ttsText = string.IsNullOrWhiteSpace(restaurant.TextVi)
             ? restaurant.History
             : restaurant.TextVi;

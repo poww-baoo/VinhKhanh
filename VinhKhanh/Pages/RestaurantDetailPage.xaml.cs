@@ -9,6 +9,7 @@ namespace VinhKhanh.Pages
         private readonly Restaurant _restaurant;
         private readonly AudioPlaybackService _audioService;
         private readonly DatabaseService _databaseService;
+        private readonly LocalizationService _localizationService;
 
         private string _selectedAudioLanguage = "vi";
 
@@ -18,10 +19,13 @@ namespace VinhKhanh.Pages
             _restaurant = restaurant;
             _audioService = audioService ?? new AudioPlaybackService();
             _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
+            _localizationService = LocalizationService.Instance;
 
             InitializeAudioLanguage();
             LoadRestaurantData();
             _ = LoadMenuItemsAsync();
+
+            _localizationService.LanguageChanged += OnLanguageChangedEvent;
         }
 
         private static T? ResolveService<T>() where T : class =>
@@ -29,15 +33,16 @@ namespace VinhKhanh.Pages
 
         private void InitializeAudioLanguage()
         {
-            var currentLanguage = LocalizationService.Instance.CurrentLanguage;
+            var currentLanguage = _localizationService.CurrentLanguage;
             _selectedAudioLanguage = currentLanguage is "en" ? "en" : "vi";
             UpdateAudioOptionUI();
         }
 
         private void LoadRestaurantData()
         {
+            var language = _localizationService.CurrentLanguage;
             RestaurantNameLabel.Text = _restaurant.Name;
-            YearLabel.Text = $"Thành lập: {_restaurant.YearEstablished}";
+            YearLabel.Text = $"{_localizationService.GetString("YearEstablished", language)}: {_restaurant.YearEstablished}";
             RatingLabel.Text = $"⭐ {_restaurant.Rating:F1}";
             HistoryLabel.Text = _restaurant.History;
             IntroLabel.Text = string.IsNullOrWhiteSpace(_restaurant.TextVi)
@@ -75,6 +80,12 @@ namespace VinhKhanh.Pages
             {
                 MenuCollection.ItemsSource = Array.Empty<PoiMenuItem>();
             }
+        }
+
+        private void OnLanguageChangedEvent(object? sender, EventArgs e)
+        {
+            LoadRestaurantData();
+            UpdateAudioOptionUI();
         }
 
         private void OnAudioOptionClicked(object sender, EventArgs e)

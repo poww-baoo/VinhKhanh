@@ -1,4 +1,5 @@
-﻿using VinhKhanh.Services;
+﻿using System.Globalization;
+using VinhKhanh.Services;
 
 namespace VinhKhanh.Pages
 {
@@ -10,9 +11,9 @@ namespace VinhKhanh.Pages
         {
             InitializeComponent();
             _localizationService = LocalizationService.Instance;
+            _localizationService.LanguageChanged += OnLanguageChangedEvent;
 
-            // Đồng bộ UI theo ngôn ngữ hiện tại khi mở trang
-            UpdateLanguageButtonUI(_localizationService.CurrentLanguage);
+            UpdateUI(_localizationService.CurrentLanguage);
         }
 
         private void OnLanguageChanged(object sender, EventArgs e)
@@ -21,7 +22,17 @@ namespace VinhKhanh.Pages
                 return;
 
             _localizationService.CurrentLanguage = language;
+        }
+
+        private void OnLanguageChangedEvent(object? sender, EventArgs e)
+        {
+            UpdateUI(_localizationService.CurrentLanguage);
+        }
+
+        private void UpdateUI(string language)
+        {
             UpdateLanguageButtonUI(language);
+            UpdatePageTexts(language);
         }
 
         private void UpdateLanguageButtonUI(string selectedLanguage)
@@ -40,6 +51,18 @@ namespace VinhKhanh.Pages
                 ViLanguageButton.BackgroundColor = Color.FromArgb("#E0E0E0");
                 ViLanguageButton.TextColor = Color.FromArgb("#1F1F1F");
             }
+        }
+
+        private void UpdatePageTexts(string language)
+        {
+            Title = _localizationService.GetString("Settings", language);
+            HeaderLabel.Text = $"⚙️ {_localizationService.GetString("Settings", language)}";
+            LanguageLabel.Text = _localizationService.GetString("Language", language);
+            NotificationsLabel.Text = _localizationService.GetString("Notifications", language);
+            NotificationDescLabel.Text = _localizationService.GetString("NotificationDesc", language);
+            AboutLabel.Text = _localizationService.GetString("About", language);
+            AppNameLabel.Text = _localizationService.GetString("AppName", language);
+            VersionLabel.Text = _localizationService.GetString("Version", language);
         }
     }
 }

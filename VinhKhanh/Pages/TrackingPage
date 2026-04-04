@@ -1,14 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+﻿.xaml
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="VinhKhanh.Pages.TrackingPage"
-             Title="Theo Dõi">
+             Title="">
 
     <VerticalStackLayout Padding="16" Spacing="16" BackgroundColor="#F5F5F5">
-        
+
         <!-- Nút bật/tắt theo dõi -->
         <Button x:Name="TrackingToggleButton"
-                Text="▶️ Bật Theo Dõi"
+                Text=""
                 Clicked="OnTrackingToggleClicked"
                 BackgroundColor="#FF6B35"
                 TextColor="White"
@@ -21,23 +22,23 @@
         <!-- Hiển thị vị trí hiện tại -->
         <Frame CornerRadius="12" Padding="16" BorderColor="#3498DB" HasShadow="False">
             <VerticalStackLayout Spacing="8">
-                <Label x:Name="CurrentLocationTitleLabel" Text="📍 Vị Trí Hiện Tại" FontSize="16" FontAttributes="Bold"/>
-                <Label x:Name="LocationLabel" FontSize="12" TextColor="#666666" Text="Chờ GPS..."/>
+                <Label x:Name="CurrentLocationTitleLabel" Text="" FontSize="16" FontAttributes="Bold"/>
+                <Label x:Name="LocationLabel" FontSize="12" TextColor="#666666" Text=""/>
             </VerticalStackLayout>
         </Frame>
 
         <!-- Hiển thị trạng thái -->
         <Frame CornerRadius="12" Padding="16" BorderColor="#E74C3C" HasShadow="False">
             <VerticalStackLayout Spacing="8">
-                <Label x:Name="StatusTitleLabel" Text="🔊 Trạng Thái" FontSize="16" FontAttributes="Bold"/>
-                <Label x:Name="StatusLabel" FontSize="12" TextColor="#666666" Text="Sẵn sàng"/>
+                <Label x:Name="StatusTitleLabel" Text="" FontSize="16" FontAttributes="Bold"/>
+                <Label x:Name="StatusLabel" FontSize="12" TextColor="#666666" Text=""/>
             </VerticalStackLayout>
         </Frame>
 
         <!-- Danh sách quán ăn gần đây -->
         <Frame CornerRadius="12" Padding="16" BorderColor="#27AE60" HasShadow="False">
             <VerticalStackLayout Spacing="8">
-                <Label x:Name="NearbyRestaurantsTitleLabel" Text="🍽️ Quán Ăn Gần Bạn" FontSize="16" FontAttributes="Bold"/>
+                <Label x:Name="NearbyRestaurantsTitleLabel" Text="" FontSize="16" FontAttributes="Bold"/>
                 <CollectionView x:Name="RestaurantsCollection" HeightRequest="300">
                     <CollectionView.ItemsLayout>
                         <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>

@@ -14,7 +14,8 @@
 
             <!-- Top App Bar -->
             <HorizontalStackLayout Spacing="12" Padding="0,8">
-                <Label Text="Phố Ẩm Thực"
+                <Label x:Name="StreetFoodLabel"
+                       Text="Phố Ẩm Thực"
                        FontSize="20"
                        FontAttributes="Bold"
                        TextColor="#1F1F1F"
@@ -54,7 +55,11 @@
             <!-- Location Info -->
             <HorizontalStackLayout Spacing="6" Margin="0,12,0,0">
                 <Label Text="📍" FontSize="14"/>
-                <Label Text="Vị trí hiện tại:" FontSize="12" TextColor="#666666" VerticalOptions="Center"/>
+                <Label x:Name="LocationInfoLabel"
+                       Text="Vị trí hiện tại:" 
+                       FontSize="12" 
+                       TextColor="#666666" 
+                       VerticalOptions="Center"/>
                 <Label Text="Quận 1, TP. HCM" FontSize="12" FontAttributes="Bold" TextColor="#1F1F1F" VerticalOptions="Center"/>
             </HorizontalStackLayout>
         </StackLayout>
@@ -65,7 +70,11 @@
 
                 <!-- TrackAsia Map -->
                 <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="8">
-                    <Label Text="Bản đồ khu vực" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F"/>
+                    <Label x:Name="MapAreaLabel"
+                           Text="Bản đồ khu vực" 
+                           FontSize="14" 
+                           FontAttributes="Bold" 
+                           TextColor="#1F1F1F"/>
                     <Frame CornerRadius="12" Padding="0" BorderColor="#E0E0E0" HasShadow="False" HeightRequest="260">
                         <Grid>
                             <WebView x:Name="TrackAsiaMapWebView" Navigating="OnMapWebViewNavigating" />
@@ -91,7 +100,12 @@
 
                 <!-- Category Filter Chips -->
                 <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
-                    <Label Text="Danh mục" FontSize="14" FontAttributes="Bold" TextColor="#1F1F1F" Margin="0,0,0,8"/>
+                    <Label x:Name="CategoriesLabel"
+                           Text="Danh mục" 
+                           FontSize="14" 
+                           FontAttributes="Bold" 
+                           TextColor="#1F1F1F" 
+                           Margin="0,0,0,8"/>
                     <CollectionView x:Name="FilterChipsCollection"
                                     SelectionMode="None"
                                     HeightRequest="45">
@@ -143,7 +157,13 @@
                 <!-- Restaurants Header -->
                 <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
                     <HorizontalStackLayout HorizontalOptions="FillAndExpand">
-                        <Label Text="Quán ăn gần bạn" FontSize="16" FontAttributes="Bold" TextColor="#1F1F1F" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+                        <Label x:Name="RestaurantsNearYouLabel"
+                               Text="Quán ăn gần bạn" 
+                               FontSize="16" 
+                               FontAttributes="Bold" 
+                               TextColor="#1F1F1F" 
+                               VerticalOptions="Center" 
+                               HorizontalOptions="FillAndExpand"/>
                         <Frame CornerRadius="12" Padding="8,4" BorderColor="Transparent" HasShadow="False" BackgroundColor="#FFF3E0" VerticalOptions="Center">
                             <Label x:Name="ResultCountLabel" Text="0 kết quả" FontSize="11" TextColor="#FF6B35"/>
                         </Frame>

@@ -8,8 +8,9 @@ namespace VinhKhanh.Services
     public class LocationService
     {
         private CancellationTokenSource _cts;
-        private readonly double _debounceSeconds = 3; // X giây debounce
+        private readonly double _debounceSeconds = 3;
         private DateTime _lastLocationUpdate = DateTime.MinValue;
+        private readonly LocalizationService _localizationService = LocalizationService.Instance;
 
         public event EventHandler<Location> LocationUpdated;
         public event EventHandler<Restaurant> EnteredGeofence;
@@ -30,7 +31,14 @@ namespace VinhKhanh.Services
                 {
                     await MainThread.InvokeOnMainThreadAsync(async () =>
                     {
-                        await Application.Current.MainPage.DisplayAlert("Quyền", "Quyền vị trí bị từ chối", "OK");
+                        var language = _localizationService.CurrentLanguage;
+                        if (Application.Current?.MainPage != null)
+                        {
+                            await Application.Current.MainPage.DisplayAlert(
+                                _localizationService.GetString("PermissionError", language),
+                                _localizationService.GetString("LocationPermissionDenied", language),
+                                _localizationService.GetString("OK", language));
+                        }
                     });
                     return;
                 }
@@ -68,7 +76,14 @@ namespace VinhKhanh.Services
             {
                 await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
-                    await Application.Current.MainPage.DisplayAlert("Lỗi", $"Lỗi theo dõi: {ex.Message}", "OK");
+                    var language = _localizationService.CurrentLanguage;
+                    if (Application.Current?.MainPage != null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert(
+                            _localizationService.GetString("Error", language),
+                            $"{_localizationService.GetString("LocationTrackingError", language)}: {ex.Message}",
+                            _localizationService.GetString("OK", language));
+                    }
                 });
             }
             finally
