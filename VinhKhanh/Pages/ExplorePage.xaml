@@ -60,202 +60,213 @@
                        FontSize="12" 
                        TextColor="#666666" 
                        VerticalOptions="Center"/>
-                <Label Text="Quận 1, TP. HCM" FontSize="12" FontAttributes="Bold" TextColor="#1F1F1F" VerticalOptions="Center"/>
+                <Label x:Name="CurrentLocationValueLabel"
+                       Text="Đang lấy vị trí..."
+                       FontSize="12"
+                       FontAttributes="Bold"
+                       TextColor="#1F1F1F"
+                       VerticalOptions="Center"
+                       LineBreakMode="TailTruncation"
+                       HorizontalOptions="FillAndExpand"/>
             </HorizontalStackLayout>
         </StackLayout>
 
         <!-- Main Content Area -->
-        <ScrollView Grid.Row="1" BackgroundColor="#FAFAFA">
-            <VerticalStackLayout x:Name="ExploreContent" Padding="0" Spacing="0">
+        <RefreshView Grid.Row="1"
+                     x:Name="ExploreRefreshView"
+                     Refreshing="OnRefreshRequested">
+            <ScrollView BackgroundColor="#FAFAFA">
+                <VerticalStackLayout x:Name="ExploreContent" Padding="0" Spacing="0">
 
-                <!-- TrackAsia Map -->
-                <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="8">
-                    <Label x:Name="MapAreaLabel"
-                           Text="Bản đồ khu vực" 
-                           FontSize="14" 
-                           FontAttributes="Bold" 
-                           TextColor="#1F1F1F"/>
-                    <Frame CornerRadius="12" Padding="0" BorderColor="#E0E0E0" HasShadow="False" HeightRequest="260">
-                        <Grid>
-                            <WebView x:Name="TrackAsiaMapWebView" Navigating="OnMapWebViewNavigating" />
+                    <!-- TrackAsia Map -->
+                    <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="8">
+                        <Label x:Name="MapAreaLabel"
+                               Text="Bản đồ khu vực" 
+                               FontSize="14" 
+                               FontAttributes="Bold" 
+                               TextColor="#1F1F1F"/>
+                        <Frame CornerRadius="12" Padding="0" BorderColor="#E0E0E0" HasShadow="False" HeightRequest="260">
+                            <Grid>
+                                <WebView x:Name="TrackAsiaMapWebView" Navigating="OnMapWebViewNavigating" />
 
-                            <Button Text="⛶"
-                                    Clicked="OnExpandMapClicked"
-                                    WidthRequest="36"
-                                    HeightRequest="36"
-                                    CornerRadius="18"
-                                    FontSize="14"
-                                    BackgroundColor="#CCFFFFFF"
-                                    TextColor="#1F1F1F"
-                                    BorderWidth="0"
-                                    HorizontalOptions="Start"
-                                    VerticalOptions="Start"
-                                    Margin="8"/>
-                        </Grid>
-                    </Frame>
-                </StackLayout>
+                                <Button Text="⛶"
+                                        Clicked="OnExpandMapClicked"
+                                        WidthRequest="36"
+                                        HeightRequest="36"
+                                        CornerRadius="18"
+                                        FontSize="14"
+                                        BackgroundColor="#CCFFFFFF"
+                                        TextColor="#1F1F1F"
+                                        BorderWidth="0"
+                                        HorizontalOptions="Start"
+                                        VerticalOptions="Start"
+                                        Margin="8"/>
+                            </Grid>
+                        </Frame>
+                    </StackLayout>
 
-                <!-- Section Divider -->
-                <BoxView HeightRequest="1" BackgroundColor="#E0E0E0"/>
+                    <!-- Section Divider -->
+                    <BoxView HeightRequest="1" BackgroundColor="#E0E0E0"/>
 
-                <!-- Category Filter Chips -->
-                <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
-                    <Label x:Name="CategoriesLabel"
-                           Text="Danh mục" 
-                           FontSize="14" 
-                           FontAttributes="Bold" 
-                           TextColor="#1F1F1F" 
-                           Margin="0,0,0,8"/>
-                    <CollectionView x:Name="FilterChipsCollection"
-                                    SelectionMode="None"
-                                    HeightRequest="45">
+                    <!-- Category Filter Chips -->
+                    <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
+                        <Label x:Name="CategoriesLabel"
+                               Text="Danh mục" 
+                               FontSize="14" 
+                               FontAttributes="Bold" 
+                               TextColor="#1F1F1F" 
+                               Margin="0,0,0,8"/>
+                        <CollectionView x:Name="FilterChipsCollection"
+                                        SelectionMode="None"
+                                        HeightRequest="45">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="local:Category">
+                                    <Frame CornerRadius="20"
+                                           Padding="14,8"
+                                           BorderColor="#E0E0E0"
+                                           HasShadow="False"
+                                           BackgroundColor="#F5F5F5">
+                                        <Frame.Triggers>
+                                            <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="#FF6B35"/>
+                                                <Setter Property="BorderColor" Value="#FF6B35"/>
+                                            </DataTrigger>
+                                        </Frame.Triggers>
+                                        <Frame.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnCategoryChipTapped" CommandParameter="{Binding .}"/>
+                                        </Frame.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="4">
+                                            <Label Text="{Binding IconText}" FontSize="12" TextColor="#666666">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="TextColor" Value="White"/>
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                            <Label Text="{Binding Name}" FontSize="12" TextColor="#1F1F1F">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="TextColor" Value="White"/>
+                                                        <Setter Property="FontAttributes" Value="Bold"/>
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                        </HorizontalStackLayout>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </StackLayout>
+
+                    <!-- Section Divider -->
+                    <BoxView HeightRequest="1" BackgroundColor="#E0E0E0"/>
+
+                    <!-- Restaurants Header -->
+                    <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
+                        <HorizontalStackLayout HorizontalOptions="FillAndExpand">
+                            <Label x:Name="RestaurantsNearYouLabel"
+                                   Text="Quán ăn gần bạn" 
+                                   FontSize="16" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#1F1F1F" 
+                                   VerticalOptions="Center" 
+                                   HorizontalOptions="FillAndExpand"/>
+                            <Frame CornerRadius="12" Padding="8,4" BorderColor="Transparent" HasShadow="False" BackgroundColor="#FFF3E0" VerticalOptions="Center">
+                                <Label x:Name="ResultCountLabel" Text="0 kết quả" FontSize="11" TextColor="#FF6B35"/>
+                            </Frame>
+                        </HorizontalStackLayout>
+                    </StackLayout>
+
+                    <!-- Restaurants List -->
+                    <CollectionView x:Name="RestaurantsCollection"
+                                    SelectionMode="Single"
+                                    Margin="0">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="0"/>
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="local:Category">
-                                <Frame CornerRadius="20"
-                                       Padding="14,8"
-                                       BorderColor="#E0E0E0"
-                                       HasShadow="False"
-                                       BackgroundColor="#F5F5F5">
-                                    <Frame.Triggers>
-                                        <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="#FF6B35"/>
-                                            <Setter Property="BorderColor" Value="#FF6B35"/>
-                                        </DataTrigger>
-                                    </Frame.Triggers>
-                                    <Frame.GestureRecognizers>
-                                        <TapGestureRecognizer Tapped="OnCategoryChipTapped" CommandParameter="{Binding .}"/>
-                                    </Frame.GestureRecognizers>
-                                    <HorizontalStackLayout Spacing="4">
-                                        <Label Text="{Binding IconText}" FontSize="12" TextColor="#666666">
-                                            <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="TextColor" Value="White"/>
-                                                </DataTrigger>
-                                            </Label.Triggers>
-                                        </Label>
-                                        <Label Text="{Binding Name}" FontSize="12" TextColor="#1F1F1F">
-                                            <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="TextColor" Value="White"/>
-                                                    <Setter Property="FontAttributes" Value="Bold"/>
-                                                </DataTrigger>
-                                            </Label.Triggers>
-                                        </Label>
-                                    </HorizontalStackLayout>
-                                </Frame>
+                            <DataTemplate x:DataType="local:Restaurant">
+                                <!-- Restaurant Card -->
+                                <StackLayout Spacing="0" BackgroundColor="Transparent" Padding="0">
+                                    <Frame CornerRadius="0" Padding="16" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#FFFFFF" Margin="0">
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="80,*,Auto" ColumnSpacing="12" RowSpacing="8">
+
+                                            <!-- Restaurant Image/Icon -->
+                                            <Frame Grid.Row="0" Grid.RowSpan="4" Grid.Column="0"
+                                                   CornerRadius="8" Padding="0" BorderColor="#E0E0E0"
+                                                   HasShadow="False" BackgroundColor="#F5F5F5" WidthRequest="80" HeightRequest="80">
+                                                <Image Source="{Binding DisplayImage}" Aspect="AspectFill" WidthRequest="80" HeightRequest="80"/>
+                                            </Frame>
+
+                                            <!-- Restaurant Name and Rating -->
+                                            <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
+                                                <Label Text="{Binding Name}"
+                                                       FontSize="15"
+                                                       FontAttributes="Bold"
+                                                       TextColor="#1F1F1F"
+                                                       LineBreakMode="TailTruncation"
+                                                       MaxLines="1"
+                                                       VerticalOptions="Center"
+                                                       HorizontalOptions="FillAndExpand"/>
+                                                <HorizontalStackLayout Grid.Column="2" Grid.Row="0" Spacing="2" VerticalOptions="Center">
+                                                    <Label Text="⭐" FontSize="12"/>
+                                                    <Label Text="{Binding Rating, StringFormat='{0:F1}'}" FontSize="12" TextColor="#FF6B35" FontAttributes="Bold"/>
+                                                </HorizontalStackLayout>
+                                            </HorizontalStackLayout>
+
+                                            <!-- Distance and Time -->
+                                            <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="12">
+                                                <Label Text="{Binding CategoryName, StringFormat='📍 {0}'}" FontSize="11" TextColor="#999999"/>
+                                                <Label Text="{Binding YearEstablished, StringFormat='⏱️ Từ năm {0}'}" FontSize="11" TextColor="#999999"/>
+                                            </HorizontalStackLayout>
+
+                                            <!-- Highlights -->
+                                            <Label Grid.Row="2" Grid.Column="1"
+                                                   Text="{Binding Highlights}"
+                                                   FontSize="11"
+                                                   TextColor="#666666"
+                                                   LineBreakMode="TailTruncation"
+                                                   MaxLines="2"/>
+
+                                            <!-- Action Buttons -->
+                                            <HorizontalStackLayout Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,4,0,0">
+                                                <Button Text="🔊 Nghe"
+                                                        Clicked="OnPlayAudioClicked"
+                                                        CommandParameter="{Binding .}"
+                                                        HorizontalOptions="FillAndExpand"
+                                                        BackgroundColor="#FF6B35"
+                                                        TextColor="White"
+                                                        Padding="8,6"
+                                                        CornerRadius="6"
+                                                        FontSize="11"
+                                                        BorderWidth="0"/>
+                                                <Button Text="📋 Chi tiết"
+                                                        Clicked="OnViewDetailsClicked"
+                                                        CommandParameter="{Binding .}"
+                                                        HorizontalOptions="FillAndExpand"
+                                                        BackgroundColor="#F5F5F5"
+                                                        TextColor="#1F1F1F"
+                                                        Padding="8,6"
+                                                        CornerRadius="6"
+                                                        FontSize="11"
+                                                        BorderWidth="0"/>
+                                            </HorizontalStackLayout>
+                                        </Grid>
+                                    </Frame>
+
+                                    <!-- Divider -->
+                                    <BoxView HeightRequest="0.5" BackgroundColor="#E0E0E0" Margin="16,0"/>
+                                </StackLayout>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-                </StackLayout>
 
-                <!-- Section Divider -->
-                <BoxView HeightRequest="1" BackgroundColor="#E0E0E0"/>
-
-                <!-- Restaurants Header -->
-                <StackLayout Padding="16,12" BackgroundColor="#FFFFFF" Spacing="0">
-                    <HorizontalStackLayout HorizontalOptions="FillAndExpand">
-                        <Label x:Name="RestaurantsNearYouLabel"
-                               Text="Quán ăn gần bạn" 
-                               FontSize="16" 
-                               FontAttributes="Bold" 
-                               TextColor="#1F1F1F" 
-                               VerticalOptions="Center" 
-                               HorizontalOptions="FillAndExpand"/>
-                        <Frame CornerRadius="12" Padding="8,4" BorderColor="Transparent" HasShadow="False" BackgroundColor="#FFF3E0" VerticalOptions="Center">
-                            <Label x:Name="ResultCountLabel" Text="0 kết quả" FontSize="11" TextColor="#FF6B35"/>
-                        </Frame>
-                    </HorizontalStackLayout>
-                </StackLayout>
-
-                <!-- Restaurants List -->
-                <CollectionView x:Name="RestaurantsCollection"
-                                SelectionMode="Single"
-                                Margin="0">
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="0"/>
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="local:Restaurant">
-                            <!-- Restaurant Card -->
-                            <StackLayout Spacing="0" BackgroundColor="Transparent" Padding="0">
-                                <Frame CornerRadius="0" Padding="16" BorderColor="#E0E0E0" HasShadow="False" BackgroundColor="#FFFFFF" Margin="0">
-                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="80,*,Auto" ColumnSpacing="12" RowSpacing="8">
-
-                                        <!-- Restaurant Image/Icon -->
-                                        <Frame Grid.Row="0" Grid.RowSpan="4" Grid.Column="0"
-                                               CornerRadius="8" Padding="0" BorderColor="#E0E0E0"
-                                               HasShadow="False" BackgroundColor="#F5F5F5" WidthRequest="80" HeightRequest="80">
-                                            <Label Text="🍲" FontSize="36" HorizontalOptions="Center" VerticalOptions="Center"/>
-                                        </Frame>
-
-                                        <!-- Restaurant Name and Rating -->
-                                        <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="8">
-                                            <Label Text="{Binding Name}"
-                                                   FontSize="15"
-                                                   FontAttributes="Bold"
-                                                   TextColor="#1F1F1F"
-                                                   LineBreakMode="TailTruncation"
-                                                   MaxLines="1"
-                                                   VerticalOptions="Center"
-                                                   HorizontalOptions="FillAndExpand"/>
-                                            <HorizontalStackLayout Grid.Column="2" Grid.Row="0" Spacing="2" VerticalOptions="Center">
-                                                <Label Text="⭐" FontSize="12"/>
-                                                <Label Text="{Binding Rating, StringFormat='{0:F1}'}" FontSize="12" TextColor="#FF6B35" FontAttributes="Bold"/>
-                                            </HorizontalStackLayout>
-                                        </HorizontalStackLayout>
-
-                                        <!-- Distance and Time -->
-                                        <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="12">
-                                            <Label Text="{Binding CategoryName, StringFormat='📍 {0}'}" FontSize="11" TextColor="#999999"/>
-                                            <Label Text="{Binding YearEstablished, StringFormat='⏱️ Từ năm {0}'}" FontSize="11" TextColor="#999999"/>
-                                        </HorizontalStackLayout>
-
-                                        <!-- Highlights -->
-                                        <Label Grid.Row="2" Grid.Column="1"
-                                               Text="{Binding Highlights}"
-                                               FontSize="11"
-                                               TextColor="#666666"
-                                               LineBreakMode="TailTruncation"
-                                               MaxLines="2"/>
-
-                                        <!-- Action Buttons -->
-                                        <HorizontalStackLayout Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,4,0,0">
-                                            <Button Text="🔊 Nghe"
-                                                    Clicked="OnPlayAudioClicked"
-                                                    CommandParameter="{Binding .}"
-                                                    HorizontalOptions="FillAndExpand"
-                                                    BackgroundColor="#FF6B35"
-                                                    TextColor="White"
-                                                    Padding="8,6"
-                                                    CornerRadius="6"
-                                                    FontSize="11"
-                                                    BorderWidth="0"/>
-                                            <Button Text="📋 Chi tiết"
-                                                    Clicked="OnViewDetailsClicked"
-                                                    CommandParameter="{Binding .}"
-                                                    HorizontalOptions="FillAndExpand"
-                                                    BackgroundColor="#F5F5F5"
-                                                    TextColor="#1F1F1F"
-                                                    Padding="8,6"
-                                                    CornerRadius="6"
-                                                    FontSize="11"
-                                                    BorderWidth="0"/>
-                                        </HorizontalStackLayout>
-                                    </Grid>
-                                </Frame>
-
-                                <!-- Divider -->
-                                <BoxView HeightRequest="0.5" BackgroundColor="#E0E0E0" Margin="16,0"/>
-                            </StackLayout>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-
-            </VerticalStackLayout>
-        </ScrollView>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
 
         <!-- Full-screen map overlay: PHẢI đặt ngoài ScrollView -->
         <Grid x:Name="FullScreenMapOverlay"

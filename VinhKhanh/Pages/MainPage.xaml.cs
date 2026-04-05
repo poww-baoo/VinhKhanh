@@ -22,6 +22,7 @@ namespace VinhKhanh.Pages
         private readonly LocationService _locationService;
         private readonly AudioPlaybackService _audioService;
         private readonly LocalizationService _localizationService;
+        private readonly FirebaseSyncService? _firebaseSyncService;
 
         private List<Restaurant> _restaurants = new();
         private string _currentTab = "explore";
@@ -47,11 +48,16 @@ namespace VinhKhanh.Pages
             _locationService = ResolveService<LocationService>() ?? new LocationService();
             _audioService = ResolveService<AudioPlaybackService>() ?? new AudioPlaybackService();
             _localizationService = ResolveService<LocalizationService>() ?? LocalizationService.Instance;
+            _firebaseSyncService = ResolveService<FirebaseSyncService>();
 
             _locationService.LocationUpdated += OnLocationUpdated;
             _locationService.EnteredGeofence += OnEnteredGeofence;
             _audioService.PlaybackCompleted += OnPlaybackCompleted;
             _localizationService.LanguageChanged += OnLocalizationLanguageChanged;
+            if (_firebaseSyncService is not null)
+            {
+                _firebaseSyncService.SyncCompleted += OnFirebaseSyncCompleted;
+            }
 
             _explorePage = new ExplorePage();
             _savedPage = new SavedPage();
@@ -137,7 +143,8 @@ namespace VinhKhanh.Pages
                 Latitude = poi.Lat,
                 Longitude = poi.Lng,
                 GeofenceRadius = poi.RadiusMeters,
-                Priority = poi.Priority
+                Priority = poi.Priority,
+                ImageFileName = poi.ImageFileName
             };
         }
 
@@ -268,10 +275,18 @@ namespace VinhKhanh.Pages
             });
         }
 
+        private void OnFirebaseSyncCompleted(object? sender, int version)
+        {
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                await LoadDataFromDatabaseAsync();
+            });
+        }
+
         private async void OnLocalizationLanguageChanged(object? sender, EventArgs e)
         {
             UpdateTabLabels();
-            LoadDataFromDatabaseAsync();
+            await LoadDataFromDatabaseAsync();
         }
 
         private void UpdateTabLabels()

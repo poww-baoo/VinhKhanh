@@ -1,6 +1,8 @@
 ﻿using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.Devices.Sensors;
 using VinhKhanh.Models;
 using VinhKhanh.Services;
 
@@ -8,6 +10,7 @@ namespace VinhKhanh.Pages;
 
 public partial class ExplorePage : ContentPage
 {
+    private const int AllCategoryId = -1;
     private const string TrackAsiaApiKey = "3a82d12156488a8391773657171aacb765";
     private const string TrackAsiaCssUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.css";
     private const string TrackAsiaJsUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.js";
@@ -16,6 +19,9 @@ public partial class ExplorePage : ContentPage
 
     private readonly AudioPlaybackService _audioService;
     private readonly LocalizationService _localizationService;
+    private readonly DatabaseService _databaseService;
+    private readonly FirebaseSyncService _firebaseSyncService;
+    private readonly ImageSyncService _imageSyncService;
 
     private readonly List<Restaurant> _allRestaurants = new();
     private readonly List<Restaurant> _filteredRestaurants = new();
@@ -25,14 +31,147 @@ public partial class ExplorePage : ContentPage
     private string _searchKeyword = string.Empty;
     private CancellationTokenSource? _searchDebounceCts;
 
+    private Location? _currentLocation;
+    private string _currentLocationDisplay = string.Empty;
+
     public ExplorePage()
     {
         InitializeComponent();
         _audioService = new AudioPlaybackService();
         _localizationService = LocalizationService.Instance;
+        _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
+
+        _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
+        _firebaseSyncService = ResolveService<FirebaseSyncService>() ?? new FirebaseSyncService(_databaseService, _imageSyncService);
+
         _localizationService.LanguageChanged += OnLanguageChangedEvent;
         UpdateUI();
         RenderTrackAsiaMap();
+        _ = LoadCurrentLocationAsync();
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        _ = LoadCurrentLocationAsync();
+    }
+
+    private async Task LoadCurrentLocationAsync()
+    {
+        try
+        {
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            }
+
+            if (status != PermissionStatus.Granted)
+            {
+                return;
+            }
+
+            // Ưu tiên vị trí real-time trước để tránh LastKnown cũ/sai (vd: California)
+            var location = await Geolocation.GetLocationAsync(new GeolocationRequest(
+                           GeolocationAccuracy.Best,
+                           TimeSpan.FromSeconds(10)))
+                       ?? await Geolocation.GetLastKnownLocationAsync();
+
+            if (location is null)
+            {
+                return;
+            }
+
+            // Loại bỏ vị trí quá cũ để tránh hiển thị sai khu vực
+            if (location.Timestamp is DateTimeOffset ts &&
+                DateTimeOffset.UtcNow - ts > TimeSpan.FromMinutes(15))
+            {
+                System.Diagnostics.Debug.WriteLine("[Explore Location] Skip stale location.");
+                return;
+            }
+
+            _currentLocation = location;
+            _currentLocationDisplay = await GetAddressDisplayAsync(location);
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                UpdateUI();
+                RenderTrackAsiaMap();
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Explore Location] {ex.Message}");
+        }
+    }
+
+    private static async Task<string> GetAddressDisplayAsync(Location location)
+    {
+        try
+        {
+            var marks = await Geocoding.Default.GetPlacemarksAsync(location.Latitude, location.Longitude);
+            var place = marks?.FirstOrDefault();
+            if (place is not null)
+            {
+                var parts = new[]
+                {
+                    place.Thoroughfare,
+                    place.SubLocality,
+                    place.Locality,
+                    place.AdminArea
+                }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+
+                var text = string.Join(", ", parts);
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return text;
+                }
+            }
+        }
+        catch
+        {
+            // fallback to coordinates
+        }
+
+        return $"{location.Latitude:F5}, {location.Longitude:F5}";
+    }
+
+    private static T? ResolveService<T>() where T : class =>
+        Application.Current?.Handler?.MauiContext?.Services.GetService<T>();
+
+    private static Restaurant MapPoiToRestaurant(Poi poi)
+    {
+        var highlights = string.IsNullOrWhiteSpace(poi.TextVi)
+            ? poi.History
+            : poi.TextVi;
+
+        if (highlights.Length > 120)
+            highlights = highlights[..120] + "...";
+
+        return new Restaurant
+        {
+            Id = poi.Id.ToString(),
+            CategoryId = poi.CategoryId,
+            CategoryName = poi.CategoryName,
+            Name = poi.Name,
+            YearEstablished = poi.YearEstablished,
+            History = poi.History,
+            Address = poi.Address,
+            TextVi = poi.TextVi,
+            TextEn = poi.TextEn,
+            TextZh = poi.TextZh,
+            TextJa = poi.TextJa,
+            TextRu = poi.TextRu,
+            TextFr = poi.TextFr,
+            Highlights = highlights,
+            Rating = poi.Rating,
+            Latitude = poi.Lat,
+            Longitude = poi.Lng,
+            GeofenceRadius = poi.RadiusMeters,
+            Priority = poi.Priority,
+            ImageFileName = poi.ImageFileName
+        };
     }
 
     private void OnLanguageChangedEvent(object? sender, EventArgs e)
@@ -44,10 +183,10 @@ public partial class ExplorePage : ContentPage
     private void UpdateUI()
     {
         var language = _localizationService.CurrentLanguage;
-        
+
         Title = _localizationService.GetString("Explore", language);
         SearchEntry.Placeholder = _localizationService.GetString("SearchPlaceholder", language);
-        
+
         // Update labels in XAML (need to find them by name)
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -56,22 +195,28 @@ public partial class ExplorePage : ContentPage
                 // Header labels
                 if (FindByName("StreetFoodLabel") is Label streetFoodLabel)
                     streetFoodLabel.Text = _localizationService.GetString("StreetFood", language);
-                
+
                 // Map section
                 if (FindByName("MapAreaLabel") is Label mapAreaLabel)
                     mapAreaLabel.Text = _localizationService.GetString("MapArea", language);
-                
+
                 // Categories section
                 if (FindByName("CategoriesLabel") is Label categoriesLabel)
                     categoriesLabel.Text = _localizationService.GetString("Categories", language);
-                
+
                 // Restaurants header
                 if (FindByName("RestaurantsNearYouLabel") is Label restaurantsLabel)
                     restaurantsLabel.Text = _localizationService.GetString("RestaurantsNearYou", language);
-                
+
                 // Current location
                 if (FindByName("LocationInfoLabel") is Label locationLabel)
                     locationLabel.Text = _localizationService.GetString("CurrentLocation", language);
+
+                // Current location value
+                if (FindByName("CurrentLocationValueLabel") is Label locationValueLabel)
+                    locationValueLabel.Text = string.IsNullOrWhiteSpace(_currentLocationDisplay)
+                        ? _localizationService.GetString("WaitingGPS", language)
+                        : _currentLocationDisplay;
             }
             catch (Exception ex)
             {
@@ -83,20 +228,22 @@ public partial class ExplorePage : ContentPage
     public void SetCategories(List<Category> categories)
     {
         _categories.Clear();
+
+        _categories.Add(new Category
+        {
+            Id = AllCategoryId,
+            Name = "Tất cả",
+            IconText = "🍽️",
+            SortOrder = int.MinValue
+        });
+
         if (categories is { Count: > 0 })
         {
             _categories.AddRange(categories.OrderBy(c => c.SortOrder));
         }
 
-        var allCategory = _categories.FirstOrDefault(c => c.Name.Equals("Tất cả", StringComparison.OrdinalIgnoreCase))
-                          ?? _categories.FirstOrDefault(c => c.SortOrder == 0)
-                          ?? _categories.FirstOrDefault();
-
-        if (allCategory is not null)
-        {
-            _selectedCategoryId = allCategory.Id;
-            UpdateCategorySelectionState();
-        }
+        _selectedCategoryId = AllCategoryId;
+        UpdateCategorySelectionState();
 
         RefreshCategoryItemsSource();
         ApplyFilters();
@@ -107,7 +254,11 @@ public partial class ExplorePage : ContentPage
         _allRestaurants.Clear();
         if (restaurants is { Count: > 0 })
         {
-            _allRestaurants.AddRange(restaurants);
+            foreach (var restaurant in restaurants)
+            {
+                restaurant.DisplayImage = _imageSyncService.GetLocalPath(restaurant.ImageFileName);
+                _allRestaurants.Add(restaurant);
+            }
         }
 
         ApplyFilters();
@@ -120,7 +271,7 @@ public partial class ExplorePage : ContentPage
         if (_selectedCategoryId.HasValue)
         {
             var selectedCategory = _categories.FirstOrDefault(c => c.Id == _selectedCategoryId.Value);
-            var isAll = selectedCategory?.Name.Equals("Tất cả", StringComparison.OrdinalIgnoreCase) == true;
+            var isAll = selectedCategory?.Id == AllCategoryId;
             if (!isAll)
             {
                 query = query.Where(r => r.CategoryId == _selectedCategoryId.Value);
@@ -214,8 +365,8 @@ public partial class ExplorePage : ContentPage
 
     private string BuildMapHtml(IReadOnlyList<Restaurant> restaurants)
     {
-        var centerLat = restaurants.Count > 0 ? restaurants[0].Latitude : 10.7769;
-        var centerLng = restaurants.Count > 0 ? restaurants[0].Longitude : 106.6966;
+        var centerLat = _currentLocation?.Latitude ?? (restaurants.Count > 0 ? restaurants[0].Latitude : 10.7769);
+        var centerLng = _currentLocation?.Longitude ?? (restaurants.Count > 0 ? restaurants[0].Longitude : 106.6966);
 
         var restaurantPayload = restaurants.Select(r => new
         {
@@ -232,6 +383,9 @@ public partial class ExplorePage : ContentPage
         var language = _localizationService.CurrentLanguage;
         var detailsText = _localizationService.GetString("ViewDetails", language);
         var mapNotLoadedText = _localizationService.GetString("MapNotLoaded", language);
+
+        var userLat = _currentLocation?.Latitude;
+        var userLng = _currentLocation?.Longitude;
 
         var html = @"
 <!DOCTYPE html>
@@ -257,6 +411,8 @@ public partial class ExplorePage : ContentPage
     const restaurants = __RESTAURANTS_JSON__;
     const detailsText = '__DETAILS_TEXT__';
     const mapNotLoadedText = '__MAP_NOT_LOADED_TEXT__';
+    const userLat = __USER_LAT__;
+    const userLng = __USER_LNG__;
 
     function getMapSdk() {
       if (window.trackasia && window.trackasia.Map) return window.trackasia;
@@ -280,6 +436,12 @@ public partial class ExplorePage : ContentPage
 
       if (sdk.NavigationControl) {
         map.addControl(new sdk.NavigationControl(), 'top-right');
+      }
+
+      if (typeof userLat === 'number' && typeof userLng === 'number') {
+        new sdk.Marker({ color: '#2E86DE' })
+          .setLngLat([userLng, userLat])
+          .addTo(map);
       }
 
       restaurants.forEach(r => {
@@ -318,7 +480,9 @@ public partial class ExplorePage : ContentPage
             .Replace("__CENTER_LAT__", centerLat.ToString(CultureInfo.InvariantCulture))
             .Replace("__CENTER_LNG__", centerLng.ToString(CultureInfo.InvariantCulture))
             .Replace("__DETAILS_TEXT__", EscapeHtml(detailsText))
-            .Replace("__MAP_NOT_LOADED_TEXT__", EscapeHtml(mapNotLoadedText));
+            .Replace("__MAP_NOT_LOADED_TEXT__", EscapeHtml(mapNotLoadedText))
+            .Replace("__USER_LAT__", userLat?.ToString(CultureInfo.InvariantCulture) ?? "null")
+            .Replace("__USER_LNG__", userLng?.ToString(CultureInfo.InvariantCulture) ?? "null");
     }
 
     private async void OnPlayAudioClicked(object sender, EventArgs e)
@@ -457,5 +621,31 @@ public partial class ExplorePage : ContentPage
         }
 
         overlay.IsVisible = false;
+    }
+
+    private async void OnRefreshRequested(object? sender, EventArgs e)
+    {
+        try
+        {
+            await _firebaseSyncService.SyncIfNeededAsync(force: true);
+            await _databaseService.InitAsync();
+
+            var categories = await _databaseService.GetCategoriesAsync();
+            var pois = await _databaseService.GetAllPoisAsync();
+
+            SetCategories(categories);
+            SetRestaurants(pois.Select(MapPoiToRestaurant).OrderBy(r => r.Priority).ToList());
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Explore Refresh] {ex.Message}");
+        }
+        finally
+        {
+            if (sender is RefreshView refreshView)
+            {
+                refreshView.IsRefreshing = false;
+            }
+        }
     }
 }

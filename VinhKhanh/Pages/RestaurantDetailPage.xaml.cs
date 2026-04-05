@@ -10,17 +10,24 @@ namespace VinhKhanh.Pages
         private readonly AudioPlaybackService _audioService;
         private readonly DatabaseService _databaseService;
         private readonly LocalizationService _localizationService;
+        private readonly ImageSyncService _imageSyncService;
 
         private string _selectedAudioLanguage = "vi";
+
+        public string DisplayImage { get; private set; } = "placeholder.png";
 
         public RestaurantDetailPage(Restaurant restaurant, AudioPlaybackService? audioService = null)
         {
             InitializeComponent();
+            BindingContext = this;
+
             _restaurant = restaurant;
             _audioService = audioService ?? new AudioPlaybackService();
             _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
             _localizationService = LocalizationService.Instance;
+            _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
 
+            LoadDisplayImage();
             InitializeAudioLanguage();
             LoadRestaurantData();
             _ = LoadMenuItemsAsync();
@@ -30,6 +37,12 @@ namespace VinhKhanh.Pages
 
         private static T? ResolveService<T>() where T : class =>
             Application.Current?.Handler?.MauiContext?.Services.GetService<T>();
+
+        private void LoadDisplayImage()
+        {
+            DisplayImage = _imageSyncService.GetLocalPath(_restaurant.ImageFileName);
+            OnPropertyChanged(nameof(DisplayImage));
+        }
 
         private void InitializeAudioLanguage()
         {

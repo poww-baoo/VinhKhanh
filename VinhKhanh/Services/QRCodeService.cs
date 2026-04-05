@@ -130,6 +130,7 @@ namespace VinhKhanh.Services
                 Longitude = poi.Lng,
                 GeofenceRadius = poi.RadiusMeters,
                 Priority = poi.Priority,
+                ImageFileName = poi.ImageFileName,
                 SignatureDish = null, // Có thể mở rộng từ database sau
                 HighlightMenuItems = null, // Có thể mở rộng từ database sau
                 Promotions = null // Có thể mở rộng từ database sau

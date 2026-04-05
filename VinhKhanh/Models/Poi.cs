@@ -40,6 +40,10 @@ public class Poi
     public int Priority { get; set; } = 1;
     public int YearEstablished { get; set; }
     public double Rating { get; set; }
+
+    [Ignore]
+    public string ImageUrl { get; set; } = "";
+
     public string ImageFileName { get; set; } = "";
     public bool IsActive { get; set; } = true;
 

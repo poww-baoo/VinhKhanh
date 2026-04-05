@@ -8,7 +8,7 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="16" BackgroundColor="#F5F5F5">
             <Frame CornerRadius="12" Padding="0" HasShadow="True" HeightRequest="200">
-                <Label Text="🍽️" FontSize="80" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="#ECF0F1"/>
+                <Image Source="{Binding DisplayImage}" Aspect="AspectFill" HeightRequest="200" />
             </Frame>
 
             <VerticalStackLayout Spacing="8">

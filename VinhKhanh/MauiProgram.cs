@@ -23,6 +23,8 @@ namespace VinhKhanh
             builder.Services
                 .AddSingleton<SQLiteDbContext>()
                 .AddSingleton<DatabaseService>()
+                .AddSingleton<ImageSyncService>()
+                .AddSingleton<FirebaseSyncService>()
                 .AddSingleton<QRCodeService>()
                 .AddSingleton<LocationService>()
                 .AddSingleton<GeofenceService>()

@@ -7,6 +7,7 @@ public class DatabaseService
 {
     private SQLiteAsyncConnection? _db;
     private bool _initialized;
+    private readonly SemaphoreSlim _syncLock = new(1, 1);
 
     private const string SeedDbVersionKey = "SeedDbVersion";
     private const int CurrentSeedDbVersion = 5; // tăng số này mỗi lần cập nhật file vinhkhanh.db
@@ -48,6 +49,55 @@ public class DatabaseService
     {
         if (!_initialized || _db is null)
             throw new InvalidOperationException("Gọi InitAsync() trước.");
+    }
+
+    public async Task ReplaceSeedDataAsync(
+        IEnumerable<Category> categories,
+        IEnumerable<Poi> pois,
+        IEnumerable<PoiMenuItem> menuItems)
+    {
+        EnsureInit();
+
+        var categoryList = categories?.ToList() ?? new List<Category>();
+        var poiList = pois?.ToList() ?? new List<Poi>();
+        var menuItemList = menuItems?.ToList() ?? new List<PoiMenuItem>();
+
+        // Bảo vệ dữ liệu local: chỉ ghi đè khi có dữ liệu POI hợp lệ từ nguồn sync
+        if (poiList.Count == 0)
+        {
+            System.Diagnostics.Debug.WriteLine("[DatabaseService] Skip ReplaceSeedDataAsync because POI list is empty.");
+            return;
+        }
+
+        await _syncLock.WaitAsync();
+        try
+        {
+            await _db!.RunInTransactionAsync(conn =>
+            {
+                conn.DeleteAll<PoiMenuItem>();
+                conn.DeleteAll<Poi>();
+                conn.DeleteAll<Category>();
+
+                foreach (var c in categoryList)
+                {
+                    conn.InsertOrReplace(c);
+                }
+
+                foreach (var p in poiList)
+                {
+                    conn.InsertOrReplace(p);
+                }
+
+                foreach (var m in menuItemList)
+                {
+                    conn.InsertOrReplace(m);
+                }
+            });
+        }
+        finally
+        {
+            _syncLock.Release();
+        }
     }
 
     public async Task<List<Category>> GetCategoriesAsync()
@@ -156,5 +206,12 @@ public class DatabaseService
         var cutoff = DateTime.Now.AddDays(-30);
         await _db!.Table<TranslationCache>()
             .DeleteAsync(t => t.CachedAt < cutoff);
+    }
+
+    public async Task<bool> HasAnyPoiAsync()
+    {
+        EnsureInit();
+        var count = await _db!.Table<Poi>().CountAsync();
+        return count > 0;
     }
 }

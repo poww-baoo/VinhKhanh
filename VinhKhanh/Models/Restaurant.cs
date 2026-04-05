@@ -21,6 +21,8 @@
         public double Longitude { get; set; }
         public double GeofenceRadius { get; set; } = 100;
         public int Priority { get; set; }
+        public string ImageFileName { get; set; } = string.Empty;
+        public string DisplayImage { get; set; } = "placeholder.png";
 
         public SignatureDish? SignatureDish { get; set; }
         public List<RestaurantMenuItem>? HighlightMenuItems { get; set; }
