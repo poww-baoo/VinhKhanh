@@ -2,10 +2,15 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:VinhKhanh.Models"
+             xmlns:converters="clr-namespace:VinhKhanh.Converters"
              x:Class="VinhKhanh.Pages.ExplorePage"
              Title="Khám Phá"
              Padding="0"
              BackgroundColor="#FAFAFA">
+
+    <ContentPage.Resources>
+        <converters:LocalizationConverter x:Key="LocalizationConverter"/>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*" RowSpacing="0">
 
@@ -233,7 +238,7 @@
 
                                             <!-- Action Buttons -->
                                             <HorizontalStackLayout Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,4,0,0">
-                                                <Button Text="🔊 Nghe"
+                                                <Button Text="{Binding ., Converter={StaticResource LocalizationConverter}, ConverterParameter=ListenButton}"
                                                         Clicked="OnPlayAudioClicked"
                                                         CommandParameter="{Binding .}"
                                                         HorizontalOptions="FillAndExpand"
@@ -243,7 +248,7 @@
                                                         CornerRadius="6"
                                                         FontSize="11"
                                                         BorderWidth="0"/>
-                                                <Button Text="📋 Chi tiết"
+                                                <Button Text="{Binding ., Converter={StaticResource LocalizationConverter}, ConverterParameter=DetailsButton}"
                                                         Clicked="OnViewDetailsClicked"
                                                         CommandParameter="{Binding .}"
                                                         HorizontalOptions="FillAndExpand"

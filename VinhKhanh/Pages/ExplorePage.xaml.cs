@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,8 @@ namespace VinhKhanh.Pages;
 public partial class ExplorePage : ContentPage
 {
     private const int AllCategoryId = -1;
+    private const string AllCategoryDefaultName = "Tất cả";
+    private const string BaseCategoryLanguage = "vi";
     private const string TrackAsiaApiKey = "3a82d12156488a8391773657171aacb765";
     private const string TrackAsiaCssUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.css";
     private const string TrackAsiaJsUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.js";
@@ -22,6 +25,7 @@ public partial class ExplorePage : ContentPage
     private readonly DatabaseService _databaseService;
     private readonly FirebaseSyncService _firebaseSyncService;
     private readonly ImageSyncService _imageSyncService;
+    private readonly TranslationService _translationService;
 
     private readonly List<Restaurant> _allRestaurants = new();
     private readonly List<Restaurant> _filteredRestaurants = new();
@@ -30,6 +34,9 @@ public partial class ExplorePage : ContentPage
     private int? _selectedCategoryId;
     private string _searchKeyword = string.Empty;
     private CancellationTokenSource? _searchDebounceCts;
+    private readonly Dictionary<int, string> _sourceCategoryNames = new();
+    private readonly Dictionary<string, Dictionary<int, string>> _categoryNameCache = new(StringComparer.OrdinalIgnoreCase);
+    private CancellationTokenSource? _categoryTranslateCts;
 
     private Location? _currentLocation;
     private string _currentLocationDisplay = string.Empty;
@@ -40,6 +47,7 @@ public partial class ExplorePage : ContentPage
         _audioService = new AudioPlaybackService();
         _localizationService = LocalizationService.Instance;
         _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
+        _translationService = new TranslationService(_databaseService);
 
         _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
         _firebaseSyncService = ResolveService<FirebaseSyncService>() ?? new FirebaseSyncService(_databaseService, _imageSyncService);
@@ -177,7 +185,7 @@ public partial class ExplorePage : ContentPage
     private void OnLanguageChangedEvent(object? sender, EventArgs e)
     {
         UpdateUI();
-        ApplyFilters();
+        _ = ApplyCategoryTranslationsAsync();
     }
 
     private void UpdateUI()
@@ -187,7 +195,6 @@ public partial class ExplorePage : ContentPage
         Title = _localizationService.GetString("Explore", language);
         SearchEntry.Placeholder = _localizationService.GetString("SearchPlaceholder", language);
 
-        // Update labels in XAML (need to find them by name)
         MainThread.BeginInvokeOnMainThread(() =>
         {
             try
@@ -217,6 +224,9 @@ public partial class ExplorePage : ContentPage
                     locationValueLabel.Text = string.IsNullOrWhiteSpace(_currentLocationDisplay)
                         ? _localizationService.GetString("WaitingGPS", language)
                         : _currentLocationDisplay;
+
+                // Cập nhật button texts trong restaurant cards
+                UpdateRestaurantButtonTexts();
             }
             catch (Exception ex)
             {
@@ -232,7 +242,7 @@ public partial class ExplorePage : ContentPage
         _categories.Add(new Category
         {
             Id = AllCategoryId,
-            Name = "Tất cả",
+            Name = AllCategoryDefaultName,
             IconText = "🍽️",
             SortOrder = int.MinValue
         });
@@ -242,11 +252,19 @@ public partial class ExplorePage : ContentPage
             _categories.AddRange(categories.OrderBy(c => c.SortOrder));
         }
 
+        _sourceCategoryNames.Clear();
+        foreach (var category in _categories)
+        {
+            _sourceCategoryNames[category.Id] = category.Name;
+        }
+
         _selectedCategoryId = AllCategoryId;
         UpdateCategorySelectionState();
 
         RefreshCategoryItemsSource();
         ApplyFilters();
+
+        _ = ApplyCategoryTranslationsAsync();
     }
 
     public void SetRestaurants(List<Restaurant> restaurants)
@@ -646,6 +664,107 @@ public partial class ExplorePage : ContentPage
             {
                 refreshView.IsRefreshing = false;
             }
+        }
+    }
+
+    private void UpdateRestaurantButtonTexts()
+    {
+        // Refresh ItemsSource để XAML Binding được cập nhật lại
+        // Điều này sẽ làm cho Converter được gọi lại với language mới
+        RestaurantsCollection.ItemsSource = null;
+        RestaurantsCollection.ItemsSource = _filteredRestaurants;
+    }
+
+    private static string NormalizeLanguageCode(string? language)
+    {
+        var normalized = (language ?? BaseCategoryLanguage).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "jp" => "ja",
+            _ => normalized
+        };
+    }
+
+    private async Task<string> GetTranslatedCategoryNameAsync(int categoryId, string sourceName, string language)
+    {
+        if (string.Equals(language, BaseCategoryLanguage, StringComparison.OrdinalIgnoreCase))
+        {
+            return sourceName;
+        }
+
+        if (_categoryNameCache.TryGetValue(language, out var byId) &&
+            byId.TryGetValue(categoryId, out var cached))
+        {
+            return cached;
+        }
+
+        var translated = await _translationService.TranslateAsync(sourceName, BaseCategoryLanguage, language) ?? sourceName;
+        if (string.IsNullOrWhiteSpace(translated))
+        {
+            translated = sourceName;
+        }
+
+        byId ??= new Dictionary<int, string>();
+        byId[categoryId] = translated;
+        _categoryNameCache[language] = byId;
+
+        return translated;
+    }
+
+    private async Task ApplyCategoryTranslationsAsync()
+    {
+        if (_categories.Count == 0 || _sourceCategoryNames.Count == 0)
+        {
+            return;
+        }
+
+        var language = NormalizeLanguageCode(_localizationService.CurrentLanguage);
+
+        _categoryTranslateCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _categoryTranslateCts = cts;
+
+        try
+        {
+            var translatedById = new Dictionary<int, string>(_categories.Count);
+
+            foreach (var category in _categories)
+            {
+                cts.Token.ThrowIfCancellationRequested();
+
+                if (!_sourceCategoryNames.TryGetValue(category.Id, out var sourceName))
+                {
+                    sourceName = category.Name;
+                }
+
+                translatedById[category.Id] = await GetTranslatedCategoryNameAsync(category.Id, sourceName, language);
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                foreach (var category in _categories)
+                {
+                    if (translatedById.TryGetValue(category.Id, out var translated))
+                    {
+                        category.Name = translated;
+                    }
+                }
+
+                foreach (var restaurant in _allRestaurants)
+                {
+                    if (translatedById.TryGetValue(restaurant.CategoryId, out var translated))
+                    {
+                        restaurant.CategoryName = translated;
+                    }
+                }
+
+                RefreshCategoryItemsSource();
+                ApplyFilters();
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            // ignore
         }
     }
 }
