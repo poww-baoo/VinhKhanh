@@ -7,17 +7,51 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="16" BackgroundColor="#F5F5F5">
-            <Frame CornerRadius="12" Padding="0" HasShadow="True" HeightRequest="200">
-                <Image Source="{Binding DisplayImage}" Aspect="AspectFill" HeightRequest="200" />
-            </Frame>
+            <!-- Hình ảnh và nút lưu -->
+            <StackLayout Spacing="8">
+                <Frame CornerRadius="12" Padding="0" HasShadow="True" HeightRequest="200">
+                    <Image Source="{Binding DisplayImage}" Aspect="AspectFill" HeightRequest="200" />
+                </Frame>
+                
+                <!-- Tên quán + icon lưu hình tròn (nằm dưới ảnh, bên phải tên) -->
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10">
+                    <Label x:Name="RestaurantNameLabel"
+                           Grid.Row="0"
+                           Grid.Column="0"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           VerticalOptions="Center" />
+
+                    <Button x:Name="SaveButton"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Clicked="OnSaveButtonClicked"
+                            WidthRequest="44"
+                            HeightRequest="44"
+                            CornerRadius="22"
+                            Padding="0"
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            BorderWidth="0"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Text="☆" />
+
+                    <HorizontalStackLayout Grid.Row="1"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Spacing="8"
+                                           Margin="0,4,0,0">
+                        <Label x:Name="YearLabel" FontSize="12" TextColor="#7F8C8D"/>
+                        <Label Text="•" TextColor="#7F8C8D"/>
+                        <Label x:Name="RatingLabel" FontSize="12" TextColor="#F39C12"/>
+                    </HorizontalStackLayout>
+                </Grid>
+            </StackLayout>
 
             <VerticalStackLayout Spacing="8">
-                <Label x:Name="RestaurantNameLabel" FontSize="24" FontAttributes="Bold"/>
-                <HorizontalStackLayout Spacing="8">
-                    <Label x:Name="YearLabel" FontSize="12" TextColor="#7F8C8D"/>
-                    <Label Text="•" TextColor="#7F8C8D"/>
-                    <Label x:Name="RatingLabel" FontSize="12" TextColor="#F39C12"/>
-                </HorizontalStackLayout>
+                
+
             </VerticalStackLayout>
 
             <Frame CornerRadius="12" Padding="12" BorderColor="#3498DB">

@@ -6,13 +6,17 @@ namespace VinhKhanh.Pages
 {
     public partial class RestaurantDetailPage : ContentPage
     {
+        public static event Action? SavedStateChanged;
+
         private readonly Restaurant _restaurant;
         private readonly AudioPlaybackService _audioService;
         private readonly DatabaseService _databaseService;
         private readonly LocalizationService _localizationService;
         private readonly ImageSyncService _imageSyncService;
+        private readonly SQLiteDbContext _dbContext;
 
         private string _selectedAudioLanguage = "vi";
+        private bool _isSaved = false;
 
         public string DisplayImage { get; private set; } = "placeholder.png";
 
@@ -26,11 +30,13 @@ namespace VinhKhanh.Pages
             _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
             _localizationService = LocalizationService.Instance;
             _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
+            _dbContext = new SQLiteDbContext();
 
             LoadDisplayImage();
             InitializeAudioLanguage();
             LoadRestaurantData();
             _ = LoadMenuItemsAsync();
+            _ = CheckIfSavedAsync();
 
             _localizationService.LanguageChanged += OnLanguageChangedEvent;
         }
@@ -103,6 +109,7 @@ namespace VinhKhanh.Pages
             NarrationLanguageLabel.Text = _localizationService.GetString("NarrationLanguage", language);
             SignatureDishLabel.Text = _restaurant.Name;
             SignatureDishStoryLabel.Text = _restaurant.History;
+            UpdateSaveButtonUI();
         }
 
         private async Task LoadMenuItemsAsync()
@@ -132,6 +139,96 @@ namespace VinhKhanh.Pages
             catch
             {
                 MenuCollection.ItemsSource = Array.Empty<PoiMenuItem>();
+            }
+        }
+
+        private async Task CheckIfSavedAsync()
+        {
+            try
+            {
+                await _dbContext.InitializeAsync();
+                _isSaved = await _dbContext.IsSavedAsync(_restaurant.Id);
+            }
+            catch
+            {
+                _isSaved = false;
+            }
+            finally
+            {
+                UpdateSaveButtonUI();
+            }
+        }
+
+        private void UpdateSaveButtonUI()
+        {
+            if (SaveButton is null)
+            {
+                return;
+            }
+
+            if (_isSaved)
+            {
+                SaveButton.Text = "★";
+                SaveButton.BackgroundColor = Color.FromArgb("#FF6B35");
+                SaveButton.TextColor = Colors.White;
+            }
+            else
+            {
+                SaveButton.Text = "☆";
+                SaveButton.BackgroundColor = Color.FromArgb("#E0E0E0");
+                SaveButton.TextColor = Color.FromArgb("#2C3E50");
+            }
+        }
+
+        private async void OnSaveButtonClicked(object sender, EventArgs e)
+        {
+            if (sender is not Button saveButton)
+            {
+                return;
+            }
+
+            try
+            {
+                saveButton.IsEnabled = false;
+                await _dbContext.InitializeAsync();
+
+                var isCurrentlySaved = await _dbContext.IsSavedAsync(_restaurant.Id);
+                var changed = false;
+
+                if (isCurrentlySaved)
+                {
+                    var removeResult = await _dbContext.RemoveSavedRestaurantAsync(_restaurant.Id);
+                    if (removeResult > 0)
+                    {
+                        _isSaved = false;
+                        changed = true;
+                    }
+                }
+                else
+                {
+                    var saveResult = await _dbContext.SaveRestaurantAsync(_restaurant.Id);
+                    if (saveResult > 0)
+                    {
+                        _isSaved = true;
+                        changed = true;
+                    }
+                }
+
+                _isSaved = await _dbContext.IsSavedAsync(_restaurant.Id);
+                UpdateSaveButtonUI();
+
+                if (changed)
+                {
+                    SavedStateChanged?.Invoke();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Save Toggle] {ex.Message}");
+            }
+            finally
+            {
+                saveButton.IsEnabled = true;
             }
         }
 

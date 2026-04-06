@@ -14,7 +14,6 @@ namespace VinhKhanh.Services
             {
                 "vi", new Dictionary<string, string>
                 {
-                    // SettingsPage
                     { "Settings", "Cài Đặt" },
                     { "Language", "🌐 Ngôn Ngữ" },
                     { "Vietnamese", "🇻🇳 Tiếng Việt" },
@@ -24,8 +23,6 @@ namespace VinhKhanh.Services
                     { "About", "ℹ️ Thông Tin" },
                     { "AppName", "Phố Ẩm Thực Vĩnh Khánh" },
                     { "Version", "Phiên bản: 1.0.0" },
-                    
-                    // ExplorePage
                     { "Explore", "Khám Phá" },
                     { "StreetFood", "Phố Ẩm Thực" },
                     { "Vinh", "Vĩnh" },
@@ -40,8 +37,6 @@ namespace VinhKhanh.Services
                     { "RestaurantsNearYou", "Quán ăn gần bạn" },
                     { "CurrentLocation", "Vị trí hiện tại:" },
                     { "District1HCMC", "Quận 1, TP. HCM" },
-                    
-                    // RestaurantDetailPage
                     { "YearEstablished", "Thành lập" },
                     { "SignatureDish", "Món Đặc Biệt" },
                     { "Menu", "Thực Đơn" },
@@ -50,20 +45,25 @@ namespace VinhKhanh.Services
                     { "NarrationLanguage", "Ngôn ngữ thuyết minh" },
                     { "Vi", "Tiếng Việt" },
                     { "En", "English" },
-                    
-                    // MainPage & Navigation
+                    { "SaveRestaurant", "💾 Lưu Quán" },
+                    { "SavedRestaurant", "✓ Đã Lưu" },
+                    { "RemoveFromSaved", "❌ Bỏ Lưu" },
+                    { "SaveSuccess", "Lưu thành công" },
+                    { "RemoveSuccess", "Bỏ lưu thành công" },
+                    { "SaveError", "Lỗi khi lưu" },
+                    { "RemoveError", "Lỗi khi bỏ lưu" },
+                    { "Success", "Thành công" },
                     { "Saved", "Đã Lưu" },
                     { "Tracking", "Theo Dõi" },
                     { "QRCode", "Quét QR" },
                     { "DataError", "Lỗi dữ liệu" },
-                    { "CannotLoadData", "Không thể đọc dữ liệu từ vinhkhanh.db" },
+                    { "CannotLoadData", "Không thể đọc dữ liệu" },
                     { "Error", "Lỗi" },
                     { "CannotLoadPage", "Không thể tải trang" },
                     { "OK", "Được" },
                     { "Tracking_Status_Completed", "Phát thuyết minh xong" },
                     { "Tracking_Status_Playing", "Đang phát thuyết minh" },
-                    
-                    // QRCodePage
+                    { "NoSavedRestaurants", "Chưa có quán ăn nào được lưu" },
                     { "ScanQR", "Quét Mã QR" },
                     { "QRInstruction", "📱 Hướng camera vào mã QR" },
                     { "QRDetected", "Quét Mã QR Thành Công" },
@@ -75,8 +75,6 @@ namespace VinhKhanh.Services
                     { "RestaurantNotFound", "❌ Không tìm thấy nhà hàng" },
                     { "ScanOtherQR", "Vui lòng quét mã QR khác" },
                     { "LoadRestaurantError", "❌ Lỗi khi tải dữ liệu nhà hàng:" },
-                    
-                    // TrackingPage
                     { "StartTracking", "▶️ Bật Theo Dõi" },
                     { "StopTracking", "⏸️ Tắt Theo Dõi" },
                     { "CurrentLocationTracking", "📍 Vị Trí Hiện Tại" },
@@ -102,7 +100,6 @@ namespace VinhKhanh.Services
             {
                 "en", new Dictionary<string, string>
                 {
-                    // SettingsPage
                     { "Settings", "Settings" },
                     { "Language", "🌐 Language" },
                     { "Vietnamese", "🇻🇳 Vietnamese" },
@@ -112,8 +109,6 @@ namespace VinhKhanh.Services
                     { "About", "ℹ️ About" },
                     { "AppName", "Vinh Khanh Street Food" },
                     { "Version", "Version: 1.0.0" },
-                    
-                    // ExplorePage
                     { "Explore", "Explore" },
                     { "StreetFood", "Street Food" },
                     { "Vinh", "Vinh" },
@@ -128,8 +123,6 @@ namespace VinhKhanh.Services
                     { "RestaurantsNearYou", "Restaurants near you" },
                     { "CurrentLocation", "Current location:" },
                     { "District1HCMC", "District 1, Ho Chi Minh City" },
-                    
-                    // RestaurantDetailPage
                     { "YearEstablished", "Established" },
                     { "SignatureDish", "Signature Dish" },
                     { "Menu", "Menu" },
@@ -138,20 +131,25 @@ namespace VinhKhanh.Services
                     { "NarrationLanguage", "Narration language" },
                     { "Vi", "Vietnamese" },
                     { "En", "English" },
-                    
-                    // MainPage & Navigation
+                    { "SaveRestaurant", "💾 Save Restaurant" },
+                    { "SavedRestaurant", "✓ Saved" },
+                    { "RemoveFromSaved", "❌ Remove" },
+                    { "SaveSuccess", "Saved successfully" },
+                    { "RemoveSuccess", "Removed successfully" },
+                    { "SaveError", "Error saving" },
+                    { "RemoveError", "Error removing" },
+                    { "Success", "Success" },
                     { "Saved", "Saved" },
                     { "Tracking", "Tracking" },
                     { "QRCode", "Scan QR" },
                     { "DataError", "Data Error" },
-                    { "CannotLoadData", "Cannot read data from vinhkhanh.db" },
+                    { "CannotLoadData", "Cannot read data" },
                     { "Error", "Error" },
                     { "CannotLoadPage", "Cannot load page" },
                     { "OK", "OK" },
                     { "Tracking_Status_Completed", "Playback completed" },
                     { "Tracking_Status_Playing", "Now playing narration" },
-                    
-                    // QRCodePage
+                    { "NoSavedRestaurants", "No saved restaurants yet" },
                     { "ScanQR", "Scan QR Code" },
                     { "QRInstruction", "📱 Point camera at QR code" },
                     { "QRDetected", "QR Code Scanned Successfully" },
@@ -163,8 +161,6 @@ namespace VinhKhanh.Services
                     { "RestaurantNotFound", "❌ Restaurant not found" },
                     { "ScanOtherQR", "Please scan another QR code" },
                     { "LoadRestaurantError", "❌ Error loading restaurant data:" },
-                    
-                    // TrackingPage
                     { "StartTracking", "▶️ Start Tracking" },
                     { "StopTracking", "⏸️ Stop Tracking" },
                     { "CurrentLocationTracking", "📍 Current Location" },

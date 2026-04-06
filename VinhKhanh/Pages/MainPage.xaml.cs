@@ -225,6 +225,11 @@ namespace VinhKhanh.Pages
                 {
                     ContentFrame.Children.Add(contentToShow);
                 }
+
+                if (tab == "saved")
+                {
+                    _ = _savedPage.RefreshSavedRestaurantsAsync();
+                }
             }
             catch (Exception ex)
             {

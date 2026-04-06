@@ -178,11 +178,22 @@ namespace VinhKhanh
         {
             try
             {
+                // Chặn lưu trùng
+                var existed = await Database.Table<SavedRestaurantEntity>()
+                    .Where(s => s.RestaurantId == restaurantId)
+                    .FirstOrDefaultAsync();
+
+                if (existed != null)
+                {
+                    return 0; // đã có rồi thì không insert nữa
+                }
+
                 var saved = new SavedRestaurantEntity
                 {
                     RestaurantId = restaurantId,
                     SavedAt = DateTime.Now
                 };
+
                 return await Database.InsertAsync(saved);
             }
             catch (Exception ex)
@@ -196,8 +207,9 @@ namespace VinhKhanh
         {
             try
             {
+                // Xóa đúng table đã map: SavedRestaurants
                 return await Database.ExecuteAsync(
-                    "DELETE FROM SavedRestaurantEntity WHERE RestaurantId = ?",
+                    "DELETE FROM SavedRestaurants WHERE RestaurantId = ?",
                     restaurantId);
             }
             catch (Exception ex)
