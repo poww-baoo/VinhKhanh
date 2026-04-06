@@ -47,7 +47,7 @@ namespace VinhKhanh.Pages
             _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
             _locationService = ResolveService<LocationService>() ?? new LocationService();
             _audioService = ResolveService<AudioPlaybackService>() ?? new AudioPlaybackService();
-            _localizationService = ResolveService<LocalizationService>() ?? LocalizationService.Instance;
+            _localizationService = LocalizationService.Instance;
             _firebaseSyncService = ResolveService<FirebaseSyncService>();
 
             _locationService.LocationUpdated += OnLocationUpdated;

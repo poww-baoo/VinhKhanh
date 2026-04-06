@@ -58,8 +58,27 @@ namespace VinhKhanh.Pages
 
         private void UpdateUI()
         {
-            var language = _localizationService.CurrentLanguage;
-            Title = _localizationService.GetString("Saved", language);
+            try
+            {
+                var language = _localizationService.CurrentLanguage;
+                Title = _localizationService.GetString("Saved", language);
+                
+                // Update SavedPageLabel
+                if (SavedPageLabel is not null)
+                {
+                    SavedPageLabel.Text = _localizationService.GetString("SavedRestaurantsLabel", language);
+                }
+                
+                // Update NoSavedTextLabel
+                if (NoSavedTextLabel is not null)
+                {
+                    NoSavedTextLabel.Text = _localizationService.GetString("NoSavedRestaurants", language);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SavedPage UpdateUI Error] {ex.Message}");
+            }
         }
 
         private async Task LoadSavedRestaurantsAsync()

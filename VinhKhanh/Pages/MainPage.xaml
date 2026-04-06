@@ -23,7 +23,7 @@
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="explore"/>
                 </StackLayout.GestureRecognizers>
                 <Label Text="🏠" FontSize="20" HorizontalOptions="Center"/>
-                <Label Text="Khám phá" FontSize="10" TextColor="#FF6B35" HorizontalOptions="Center" HorizontalTextAlignment="Center" FontAttributes="Bold"/>
+                <Label Text="Explore" FontSize="10" TextColor="#FF6B35" HorizontalOptions="Center" HorizontalTextAlignment="Center" FontAttributes="Bold" x:Name="ExploreLabel"/>
             </StackLayout>
 
             <!-- Saved Tab -->
@@ -35,7 +35,7 @@
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="saved"/>
                 </StackLayout.GestureRecognizers>
                 <Label Text="📍" FontSize="20" HorizontalOptions="Center"/>
-                <Label Text="Đã Lưu" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                <Label Text="Saved" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center" x:Name="SavedLabel"/>
             </StackLayout>
 
             <!-- QR Code Tab (Centered) -->
@@ -51,7 +51,7 @@
                        HeightRequest="20" 
                        HorizontalOptions="Center"
                        Aspect="AspectFit"/>
-                <Label Text="Quét QR" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                <Label Text="Scan QR" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center" x:Name="QRCodeLabel"/>
             </StackLayout>
 
             <!-- Tracking Tab -->
@@ -63,7 +63,7 @@
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="tracking"/>
                 </StackLayout.GestureRecognizers>
                 <Label Text="🎯" FontSize="20" HorizontalOptions="Center"/>
-                <Label Text="Theo Dõi" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                <Label Text="Tracking" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center" x:Name="TrackingLabel"/>
             </StackLayout>
 
             <!-- Settings Tab -->
@@ -75,7 +75,7 @@
                     <TapGestureRecognizer Tapped="OnTabTapped" CommandParameter="settings"/>
                 </StackLayout.GestureRecognizers>
                 <Label Text="⚙️" FontSize="20" HorizontalOptions="Center"/>
-                <Label Text="Cài đặt" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                <Label Text="Settings" FontSize="10" TextColor="#666666" HorizontalOptions="Center" HorizontalTextAlignment="Center" x:Name="SettingsLabel"/>
             </StackLayout>
         </Grid>
     </Grid>

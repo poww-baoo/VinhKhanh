@@ -32,7 +32,7 @@ namespace VinhKhanh
                 .AddSingleton<TtsService>()
                 .AddSingleton<TranslationService>()
                 .AddSingleton<PlaybackService>()
-                .AddSingleton<LocalizationService>()
+                .AddSingleton(_ => LocalizationService.Instance)
                 .AddSingleton<MainPage>()
                 .AddSingleton<ExplorePage>()
                 .AddSingleton<SavedPage>()
