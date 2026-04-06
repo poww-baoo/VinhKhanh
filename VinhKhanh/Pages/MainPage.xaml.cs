@@ -23,6 +23,7 @@ namespace VinhKhanh.Pages
         private readonly AudioPlaybackService _audioService;
         private readonly LocalizationService _localizationService;
         private readonly FirebaseSyncService? _firebaseSyncService;
+        private readonly TranslationService _translationService;
 
         private List<Restaurant> _restaurants = new();
         private string _currentTab = "explore";
@@ -49,6 +50,7 @@ namespace VinhKhanh.Pages
             _audioService = ResolveService<AudioPlaybackService>() ?? new AudioPlaybackService();
             _localizationService = LocalizationService.Instance;
             _firebaseSyncService = ResolveService<FirebaseSyncService>();
+            _translationService = ResolveService<TranslationService>() ?? new TranslationService(_databaseService);
 
             _locationService.LocationUpdated += OnLocationUpdated;
             _locationService.EnteredGeofence += OnEnteredGeofence;
@@ -93,6 +95,13 @@ namespace VinhKhanh.Pages
                 _explorePage.SetCategories(categories);
 
                 var pois = await _databaseService.GetAllPoisAsync();
+
+                if (_localizationService.CurrentLanguage == "en")
+                {
+                    await _translationService.EnsureEnglishColumnsAsync(pois);
+                    pois = await _databaseService.GetAllPoisAsync();
+                }
+
                 _restaurants = pois
                     .Select(MapPoiToRestaurant)
                     .OrderBy(r => r.Priority)
@@ -131,7 +140,9 @@ namespace VinhKhanh.Pages
                 Name = poi.Name,
                 YearEstablished = poi.YearEstablished,
                 History = poi.History,
+                HistoryEn = poi.HistoryEn,
                 Address = poi.Address,
+                AdrEn = poi.AdrEn,
                 TextVi = poi.TextVi,
                 TextEn = poi.TextEn,
                 TextZh = poi.TextZh,

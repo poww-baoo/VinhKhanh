@@ -14,8 +14,10 @@ public class Poi
     public string Name { get; set; } = "";
 
     public string History { get; set; } = "";
+    public string HistoryEn { get; set; } = "";
 
     public string Address { get; set; } = "";
+    public string AdrEn { get; set; } = "";
 
     public string TextVi { get; set; } = "";
     public string TextEn { get; set; } = "";
@@ -46,6 +48,22 @@ public class Poi
 
     public string ImageFileName { get; set; } = "";
     public bool IsActive { get; set; } = true;
+
+    public string GetHistoryByLanguage(string language)
+    {
+        var normalized = (language ?? "vi").Trim().ToLowerInvariant();
+        return normalized == "en" && !string.IsNullOrWhiteSpace(HistoryEn)
+            ? HistoryEn
+            : History;
+    }
+
+    public string GetAddressByLanguage(string language)
+    {
+        var normalized = (language ?? "vi").Trim().ToLowerInvariant();
+        return normalized == "en" && !string.IsNullOrWhiteSpace(AdrEn)
+            ? AdrEn
+            : Address;
+    }
 
     public string GetTextByLanguage(string language)
     {

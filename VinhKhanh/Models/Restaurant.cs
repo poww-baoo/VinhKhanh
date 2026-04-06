@@ -7,8 +7,13 @@
         public string CategoryName { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public int YearEstablished { get; set; }
+
         public string History { get; set; } = string.Empty;
+        public string HistoryEn { get; set; } = string.Empty;
+
         public string Address { get; set; } = string.Empty;
+        public string AdrEn { get; set; } = string.Empty;
+
         public string TextVi { get; set; } = string.Empty;
         public string TextEn { get; set; } = string.Empty;
         public string TextZh { get; set; } = string.Empty;
@@ -28,6 +33,22 @@
         public List<RestaurantMenuItem>? HighlightMenuItems { get; set; }
         public List<Promotion>? Promotions { get; set; }
         public Dictionary<string, RestaurantLocalized>? LocalizedContent { get; set; }
+
+        public string GetHistoryByLanguage(string language)
+        {
+            var normalized = (language ?? "vi").Trim().ToLowerInvariant();
+            return normalized == "en" && !string.IsNullOrWhiteSpace(HistoryEn)
+                ? HistoryEn
+                : History;
+        }
+
+        public string GetAddressByLanguage(string language)
+        {
+            var normalized = (language ?? "vi").Trim().ToLowerInvariant();
+            return normalized == "en" && !string.IsNullOrWhiteSpace(AdrEn)
+                ? AdrEn
+                : Address;
+        }
 
         public string GetTextByLanguage(string language)
         {

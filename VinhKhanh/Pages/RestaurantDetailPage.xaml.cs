@@ -100,15 +100,16 @@ namespace VinhKhanh.Pages
             RestaurantNameLabel.Text = _restaurant.Name;
             YearLabel.Text = $"{_localizationService.GetString("YearEstablished", language)}: {_restaurant.YearEstablished}";
             RatingLabel.Text = $"⭐ {_restaurant.Rating:F1}";
-            HistoryLabel.Text = _restaurant.History;
+            HistoryLabel.Text = _restaurant.GetHistoryByLanguage(language);
             IntroLabel.Text = _restaurant.GetTextByLanguage(language);
             AddressTitleLabel.Text = _localizationService.GetString("Address", language);
-            AddressLabel.Text = string.IsNullOrWhiteSpace(_restaurant.Address)
-                ? "-"
-                : _restaurant.Address;
+
+            var localizedAddress = _restaurant.GetAddressByLanguage(language);
+            AddressLabel.Text = string.IsNullOrWhiteSpace(localizedAddress) ? "-" : localizedAddress;
+
             NarrationLanguageLabel.Text = _localizationService.GetString("NarrationLanguage", language);
             SignatureDishLabel.Text = _restaurant.Name;
-            SignatureDishStoryLabel.Text = _restaurant.History;
+            SignatureDishStoryLabel.Text = _restaurant.GetHistoryByLanguage(language);
             UpdateSaveButtonUI();
         }
 
