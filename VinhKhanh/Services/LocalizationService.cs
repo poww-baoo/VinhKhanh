@@ -98,6 +98,17 @@ namespace VinhKhanh.Services
                     { "Longitude", "Kinh độ" },
                     { "LocationPermissionDenied", "Quyền vị trí bị từ chối" },
                     { "LocationTrackingError", "Lỗi theo dõi vị trí" },
+                    { "RestaurantDetailTitle", "Chi Tiết Quán Ăn" },
+                    { "History", "Lịch Sử" },
+                    { "Introduction", "Giới thiệu" },
+                    { "FeaturedMenu", "Menu Nổi Bật" },
+                    { "NoMenuData", "Chưa có dữ liệu menu" },
+                    { "PlaybackControls", "Điều Khiển Phát" },
+                    { "ListenStoryButton", "🔊 Nghe Câu Chuyện" },
+                    { "Zh", "中文" },
+                    { "Ja", "日本語" },
+                    { "Ru", "Русский" },
+                    { "Fr", "Français" },
                 }
             },
             {
@@ -187,6 +198,17 @@ namespace VinhKhanh.Services
                     { "Longitude", "Longitude" },
                     { "LocationPermissionDenied", "Location permission was denied" },
                     { "LocationTrackingError", "Location tracking error" },
+                    { "RestaurantDetailTitle", "Restaurant Details" },
+                    { "History", "History" },
+                    { "Introduction", "Introduction" },
+                    { "FeaturedMenu", "Featured Menu" },
+                    { "NoMenuData", "No menu data available" },
+                    { "PlaybackControls", "Playback Controls" },
+                    { "ListenStoryButton", "🔊 Listen to Story" },
+                    { "Zh", "Chinese" },
+                    { "Ja", "Japanese" },
+                    { "Ru", "Russian" },
+                    { "Fr", "French" },
                 }
             }
         };

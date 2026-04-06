@@ -2,18 +2,15 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:model="clr-namespace:VinhKhanh.Models"
-             x:Class="VinhKhanh.Pages.RestaurantDetailPage"
-             Title="Chi Tiết Quán Ăn"> 
+             x:Class="VinhKhanh.Pages.RestaurantDetailPage">
 
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="16" BackgroundColor="#F5F5F5">
-            <!-- Hình ảnh và nút lưu -->
             <StackLayout Spacing="8">
                 <Frame CornerRadius="12" Padding="0" HasShadow="True" HeightRequest="200">
                     <Image Source="{Binding DisplayImage}" Aspect="AspectFill" HeightRequest="200" />
                 </Frame>
-                
-                <!-- Tên quán + icon lưu hình tròn (nằm dưới ảnh, bên phải tên) -->
+
                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10">
                     <Label x:Name="RestaurantNameLabel"
                            Grid.Row="0"
@@ -37,11 +34,7 @@
                             VerticalOptions="Center"
                             Text="☆" />
 
-                    <HorizontalStackLayout Grid.Row="1"
-                                           Grid.Column="0"
-                                           Grid.ColumnSpan="2"
-                                           Spacing="8"
-                                           Margin="0,4,0,0">
+                    <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8" Margin="0,4,0,0">
                         <Label x:Name="YearLabel" FontSize="12" TextColor="#7F8C8D"/>
                         <Label Text="•" TextColor="#7F8C8D"/>
                         <Label x:Name="RatingLabel" FontSize="12" TextColor="#F39C12"/>
@@ -49,35 +42,30 @@
                 </Grid>
             </StackLayout>
 
-            <VerticalStackLayout Spacing="8">
-                
-
-            </VerticalStackLayout>
-
             <Frame CornerRadius="12" Padding="12" BorderColor="#3498DB">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Lịch Sử" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="HistoryTitleLabel" FontSize="16" FontAttributes="Bold"/>
                     <Label x:Name="HistoryLabel" FontSize="12" LineBreakMode="WordWrap"/>
                 </VerticalStackLayout>
             </Frame>
 
             <Frame CornerRadius="12" Padding="12" BorderColor="#1ABC9C">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Giới thiệu" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="IntroTitleLabel" FontSize="16" FontAttributes="Bold"/>
                     <Label x:Name="IntroLabel" FontSize="12" LineBreakMode="WordWrap"/>
                 </VerticalStackLayout>
             </Frame>
 
             <Frame CornerRadius="12" Padding="12" BorderColor="#16A085">
                 <VerticalStackLayout Spacing="8">
-                    <Label x:Name="AddressTitleLabel" Text="Địa chỉ" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="AddressTitleLabel" FontSize="16" FontAttributes="Bold"/>
                     <Label x:Name="AddressLabel" FontSize="12" LineBreakMode="WordWrap" TextColor="#1F1F1F"/>
                 </VerticalStackLayout>
             </Frame>
 
             <Frame CornerRadius="12" Padding="12" BorderColor="#E74C3C">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Món Đặc Biệt" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="SignatureDishTitleLabel" FontSize="16" FontAttributes="Bold"/>
                     <Label x:Name="SignatureDishLabel" FontSize="14" FontAttributes="Bold"/>
                     <Label x:Name="SignatureDishStoryLabel" FontSize="12" LineBreakMode="WordWrap"/>
                 </VerticalStackLayout>
@@ -85,97 +73,31 @@
 
             <Frame CornerRadius="12" Padding="12" BorderColor="#F39C12">
                 <VerticalStackLayout Spacing="8">
-                    <Label x:Name="NarrationLanguageLabel" Text="Ngôn ngữ thuyết minh" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="NarrationLanguageLabel" FontSize="16" FontAttributes="Bold"/>
 
                     <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
-                        <Button x:Name="ViOptionButton"
-                                Text="🇻🇳 Tiếng Việt"
-                                Clicked="OnAudioOptionClicked"
-                                CommandParameter="vi"
-                                BackgroundColor="#FF6B35"
-                                TextColor="White"
-                                Padding="14,10"
-                                CornerRadius="10"
-                                FontSize="12"
-                                FontAttributes="Bold"
-                                BorderWidth="0"/>
-
-                        <Button x:Name="EnOptionButton"
-                                Text="🇬🇧 English"
-                                Clicked="OnAudioOptionClicked"
-                                CommandParameter="en"
-                                BackgroundColor="#E0E0E0"
-                                TextColor="#1F1F1F"
-                                Padding="14,10"
-                                CornerRadius="10"
-                                FontSize="12"
-                                FontAttributes="Bold"
-                                BorderWidth="0"/>
+                        <Button x:Name="ViOptionButton" Clicked="OnAudioOptionClicked" CommandParameter="vi" BackgroundColor="#FF6B35" TextColor="White" Padding="14,10" CornerRadius="10" FontSize="12" FontAttributes="Bold" BorderWidth="0"/>
+                        <Button x:Name="EnOptionButton" Clicked="OnAudioOptionClicked" CommandParameter="en" BackgroundColor="#E0E0E0" TextColor="#1F1F1F" Padding="14,10" CornerRadius="10" FontSize="12" FontAttributes="Bold" BorderWidth="0"/>
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="10" Margin="0,4,0,0">
-                        <Button x:Name="ZhOptionButton"
-                                Text="🇨🇳 中文"
-                                Clicked="OnAudioOptionClicked"
-                                CommandParameter="zh"
-                                BackgroundColor="#E0E0E0"
-                                TextColor="#1F1F1F"
-                                Padding="14,10"
-                                CornerRadius="10"
-                                FontSize="12"
-                                FontAttributes="Bold"
-                                BorderWidth="0"/>
-
-                        <Button x:Name="JaOptionButton"
-                                Text="🇯🇵 日本語"
-                                Clicked="OnAudioOptionClicked"
-                                CommandParameter="ja"
-                                BackgroundColor="#E0E0E0"
-                                TextColor="#1F1F1F"
-                                Padding="14,10"
-                                CornerRadius="10"
-                                FontSize="12"
-                                FontAttributes="Bold"
-                                BorderWidth="0"/>
+                        <Button x:Name="ZhOptionButton" Clicked="OnAudioOptionClicked" CommandParameter="zh" BackgroundColor="#E0E0E0" TextColor="#1F1F1F" Padding="14,10" CornerRadius="10" FontSize="12" FontAttributes="Bold" BorderWidth="0"/>
+                        <Button x:Name="JaOptionButton" Clicked="OnAudioOptionClicked" CommandParameter="ja" BackgroundColor="#E0E0E0" TextColor="#1F1F1F" Padding="14,10" CornerRadius="10" FontSize="12" FontAttributes="Bold" BorderWidth="0"/>
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="10" Margin="0,4,0,0">
-                        <Button x:Name="RuOptionButton"
-                                Text="🇷🇺 Русский"
-                                Clicked="OnAudioOptionClicked"
-                                CommandParameter="ru"
-                                BackgroundColor="#E0E0E0"
-                                TextColor="#1F1F1F"
-                                Padding="14,10"
-                                CornerRadius="10"
-                                FontSize="12"
-                                FontAttributes="Bold"
-                                BorderWidth="0"/>
-
-                        <Button x:Name="FrOptionButton"
-                                Text="🇫🇷 Français"
-                                Clicked="OnAudioOptionClicked"
-                                CommandParameter="fr"
-                                BackgroundColor="#E0E0E0"
-                                TextColor="#1F1F1F"
-                                Padding="14,10"
-                                CornerRadius="10"
-                                FontSize="12"
-                                FontAttributes="Bold"
-                                BorderWidth="0"/>
+                        <Button x:Name="RuOptionButton" Clicked="OnAudioOptionClicked" CommandParameter="ru" BackgroundColor="#E0E0E0" TextColor="#1F1F1F" Padding="14,10" CornerRadius="10" FontSize="12" FontAttributes="Bold" BorderWidth="0"/>
+                        <Button x:Name="FrOptionButton" Clicked="OnAudioOptionClicked" CommandParameter="fr" BackgroundColor="#E0E0E0" TextColor="#1F1F1F" Padding="14,10" CornerRadius="10" FontSize="12" FontAttributes="Bold" BorderWidth="0"/>
                     </HorizontalStackLayout>
 
-                    <Button x:Name="PlaySignatureButton"
-                            Text="🔊 Nghe Câu Chuyện"
-                            Clicked="OnPlaySignatureDish"
-                            Margin="0,8,0,0"/>
+                    <Button x:Name="PlaySignatureButton" Clicked="OnPlaySignatureDish" Margin="0,8,0,0"/>
                 </VerticalStackLayout>
             </Frame>
 
             <Frame CornerRadius="12" Padding="12" BorderColor="#9B59B6">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Menu Nổi Bật" FontSize="16" FontAttributes="Bold"/>
-                    <CollectionView x:Name="MenuCollection" HeightRequest="180" EmptyView="Chưa có dữ liệu menu">
+                    <Label x:Name="MenuTitleLabel" FontSize="16" FontAttributes="Bold"/>
+                    <CollectionView x:Name="MenuCollection" HeightRequest="180">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
                         </CollectionView.ItemsLayout>
@@ -196,7 +118,7 @@
 
             <Frame CornerRadius="12" Padding="12" BorderColor="#2C3E50">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Điều Khiển Phát" FontSize="14" FontAttributes="Bold"/>
+                    <Label x:Name="PlaybackControlTitleLabel" FontSize="14" FontAttributes="Bold"/>
                     <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
                         <Button x:Name="PlayButton" Text="▶️" Clicked="OnPlayClicked" Padding="12"/>
                         <Button x:Name="PauseButton" Text="⏸️" Clicked="OnPauseClicked" Padding="12"/>

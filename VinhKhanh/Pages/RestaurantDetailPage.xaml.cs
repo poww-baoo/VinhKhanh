@@ -97,17 +97,34 @@ namespace VinhKhanh.Pages
         private void LoadRestaurantData()
         {
             var language = _localizationService.CurrentLanguage;
+
+            Title = _localizationService.GetString("RestaurantDetailTitle", language);
             RestaurantNameLabel.Text = _restaurant.Name;
             YearLabel.Text = $"{_localizationService.GetString("YearEstablished", language)}: {_restaurant.YearEstablished}";
             RatingLabel.Text = $"⭐ {_restaurant.Rating:F1}";
             HistoryLabel.Text = _restaurant.GetHistoryByLanguage(language);
             IntroLabel.Text = _restaurant.GetTextByLanguage(language);
+
+            HistoryTitleLabel.Text = _localizationService.GetString("History", language);
+            IntroTitleLabel.Text = _localizationService.GetString("Introduction", language);
             AddressTitleLabel.Text = _localizationService.GetString("Address", language);
+            SignatureDishTitleLabel.Text = _localizationService.GetString("SignatureDish", language);
+            NarrationLanguageLabel.Text = _localizationService.GetString("NarrationLanguage", language);
+            MenuTitleLabel.Text = _localizationService.GetString("FeaturedMenu", language);
+            PlaybackControlTitleLabel.Text = _localizationService.GetString("PlaybackControls", language);
+            PlaySignatureButton.Text = _localizationService.GetString("ListenStoryButton", language);
+            MenuCollection.EmptyView = _localizationService.GetString("NoMenuData", language);
+
+            ViOptionButton.Text = $"🇻🇳 {_localizationService.GetString("Vi", language)}";
+            EnOptionButton.Text = $"🇬🇧 {_localizationService.GetString("En", language)}";
+            ZhOptionButton.Text = $"🇨🇳 {_localizationService.GetString("Zh", language)}";
+            JaOptionButton.Text = $"🇯🇵 {_localizationService.GetString("Ja", language)}";
+            RuOptionButton.Text = $"🇷🇺 {_localizationService.GetString("Ru", language)}";
+            FrOptionButton.Text = $"🇫🇷 {_localizationService.GetString("Fr", language)}";
 
             var localizedAddress = _restaurant.GetAddressByLanguage(language);
             AddressLabel.Text = string.IsNullOrWhiteSpace(localizedAddress) ? "-" : localizedAddress;
 
-            NarrationLanguageLabel.Text = _localizationService.GetString("NarrationLanguage", language);
             SignatureDishLabel.Text = _restaurant.Name;
             SignatureDishStoryLabel.Text = _restaurant.GetHistoryByLanguage(language);
             UpdateSaveButtonUI();
