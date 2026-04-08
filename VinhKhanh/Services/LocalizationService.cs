@@ -210,6 +210,170 @@ namespace VinhKhanh.Services
                     { "Ru", "Russian" },
                     { "Fr", "French" },
                 }
+            },
+            {
+                "zh", new Dictionary<string, string>
+                {
+                    { "Settings", "设置" },
+                    { "Language", "🌐 语言" },
+                    { "Notifications", "🔔 通知" },
+                    { "NotificationDesc", "靠近餐厅时接收通知" },
+                    { "About", "ℹ️ 关于" },
+                    { "AppName", "Vinh Khanh 街头美食" },
+                    { "Version", "版本: 1.0.0" },
+                    { "Explore", "探索" },
+                    { "Saved", "已保存" },
+                    { "Tracking", "追踪" },
+                    { "QRCode", "扫码" },
+                    { "SearchPlaceholder", "搜索餐厅..." },
+                    { "Results", "结果" },
+                    { "ViewDetails", "详情" },
+                    { "Play", "播放" },
+                    { "Categories", "分类" },
+                    { "RestaurantsNearYou", "附近餐厅" },
+                    { "CurrentLocation", "当前位置:" },
+                    { "YearEstablished", "成立年份" },
+                    { "SignatureDish", "招牌菜" },
+                    { "Address", "地址" },
+                    { "NarrationLanguage", "讲解语言" },
+                    { "History", "历史" },
+                    { "Introduction", "介绍" },
+                    { "FeaturedMenu", "特色菜单" },
+                    { "PlaybackControls", "播放控制" },
+                    { "ListenStoryButton", "🔊 收听故事" },
+                    { "NoMenuData", "暂无菜单数据" },
+                    { "Error", "错误" },
+                    { "OK", "确定" },
+                    { "Vi", "Tiếng Việt" },
+                    { "En", "English" },
+                    { "Zh", "中文" },
+                    { "Ja", "日本語" },
+                    { "Ru", "Русский" },
+                    { "Fr", "Français" },
+                }
+            },
+            {
+                "ja", new Dictionary<string, string>
+                {
+                    { "Settings", "設定" },
+                    { "Language", "🌐 言語" },
+                    { "Notifications", "🔔 通知" },
+                    { "NotificationDesc", "レストランの近くで通知を受け取る" },
+                    { "About", "ℹ️ 情報" },
+                    { "AppName", "Vinh Khanh ストリートフード" },
+                    { "Version", "バージョン: 1.0.0" },
+                    { "Explore", "探索" },
+                    { "Saved", "保存済み" },
+                    { "Tracking", "追跡" },
+                    { "QRCode", "QRスキャン" },
+                    { "SearchPlaceholder", "レストランを検索..." },
+                    { "Results", "件" },
+                    { "ViewDetails", "詳細" },
+                    { "Play", "再生" },
+                    { "Categories", "カテゴリー" },
+                    { "RestaurantsNearYou", "近くのレストラン" },
+                    { "CurrentLocation", "現在地:" },
+                    { "YearEstablished", "創業年" },
+                    { "SignatureDish", "看板料理" },
+                    { "Address", "住所" },
+                    { "NarrationLanguage", "ナレーション言語" },
+                    { "History", "歴史" },
+                    { "Introduction", "紹介" },
+                    { "FeaturedMenu", "おすすめメニュー" },
+                    { "PlaybackControls", "再生コントロール" },
+                    { "ListenStoryButton", "🔊 ストーリーを聴く" },
+                    { "NoMenuData", "メニューデータがありません" },
+                    { "Error", "エラー" },
+                    { "OK", "OK" },
+                    { "Vi", "Tiếng Việt" },
+                    { "En", "English" },
+                    { "Zh", "中文" },
+                    { "Ja", "日本語" },
+                    { "Ru", "Русский" },
+                    { "Fr", "Français" },
+                }
+            },
+            {
+                "ru", new Dictionary<string, string>
+                {
+                    { "Settings", "Настройки" },
+                    { "Language", "🌐 Язык" },
+                    { "Notifications", "🔔 Уведомления" },
+                    { "NotificationDesc", "Получать уведомления рядом с рестораном" },
+                    { "About", "ℹ️ О приложении" },
+                    { "AppName", "Уличная еда Винькхань" },
+                    { "Version", "Версия: 1.0.0" },
+                    { "Explore", "Обзор" },
+                    { "Saved", "Сохранено" },
+                    { "Tracking", "Отслеживание" },
+                    { "QRCode", "QR-сканер" },
+                    { "SearchPlaceholder", "Поиск ресторанов..." },
+                    { "Results", "результатов" },
+                    { "ViewDetails", "Подробнее" },
+                    { "Play", "Слушать" },
+                    { "Categories", "Категории" },
+                    { "RestaurantsNearYou", "Рестораны рядом" },
+                    { "CurrentLocation", "Текущее местоположение:" },
+                    { "YearEstablished", "Год основания" },
+                    { "SignatureDish", "Фирменное блюдо" },
+                    { "Address", "Адрес" },
+                    { "NarrationLanguage", "Язык озвучки" },
+                    { "History", "История" },
+                    { "Introduction", "Введение" },
+                    { "FeaturedMenu", "Рекомендуемое меню" },
+                    { "PlaybackControls", "Управление воспроизведением" },
+                    { "ListenStoryButton", "🔊 Слушать историю" },
+                    { "NoMenuData", "Нет данных меню" },
+                    { "Error", "Ошибка" },
+                    { "OK", "OK" },
+                    { "Vi", "Tiếng Việt" },
+                    { "En", "English" },
+                    { "Zh", "中文" },
+                    { "Ja", "日本語" },
+                    { "Ru", "Русский" },
+                    { "Fr", "Français" },
+                }
+            },
+            {
+                "fr", new Dictionary<string, string>
+                {
+                    { "Settings", "Paramètres" },
+                    { "Language", "🌐 Langue" },
+                    { "Notifications", "🔔 Notifications" },
+                    { "NotificationDesc", "Recevoir des notifications près des restaurants" },
+                    { "About", "ℹ️ À propos" },
+                    { "AppName", "Street Food Vinh Khanh" },
+                    { "Version", "Version : 1.0.0" },
+                    { "Explore", "Explorer" },
+                    { "Saved", "Enregistré" },
+                    { "Tracking", "Suivi" },
+                    { "QRCode", "Scanner QR" },
+                    { "SearchPlaceholder", "Rechercher des restaurants..." },
+                    { "Results", "résultats" },
+                    { "ViewDetails", "Détails" },
+                    { "Play", "Écouter" },
+                    { "Categories", "Catégories" },
+                    { "RestaurantsNearYou", "Restaurants près de vous" },
+                    { "CurrentLocation", "Position actuelle :" },
+                    { "YearEstablished", "Fondé en" },
+                    { "SignatureDish", "Plat signature" },
+                    { "Address", "Adresse" },
+                    { "NarrationLanguage", "Langue de narration" },
+                    { "History", "Histoire" },
+                    { "Introduction", "Introduction" },
+                    { "FeaturedMenu", "Menu vedette" },
+                    { "PlaybackControls", "Contrôles de lecture" },
+                    { "ListenStoryButton", "🔊 Écouter l'histoire" },
+                    { "NoMenuData", "Aucune donnée de menu" },
+                    { "Error", "Erreur" },
+                    { "OK", "OK" },
+                    { "Vi", "Tiếng Việt" },
+                    { "En", "English" },
+                    { "Zh", "中文" },
+                    { "Ja", "日本語" },
+                    { "Ru", "Русский" },
+                    { "Fr", "Français" },
+                }
             }
         };
 
@@ -220,10 +384,11 @@ namespace VinhKhanh.Services
             get => _currentLanguage;
             set
             {
-                if (_currentLanguage != value)
+                var normalized = NormalizeLanguageCode(value);
+                if (_currentLanguage != normalized)
                 {
-                    _currentLanguage = value;
-                    CultureInfo.CurrentUICulture = new CultureInfo(value);
+                    _currentLanguage = normalized;
+                    CultureInfo.CurrentUICulture = new CultureInfo(normalized);
                     LanguageChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -231,17 +396,54 @@ namespace VinhKhanh.Services
 
         public string GetString(string key, string? language = null)
         {
-            language ??= CurrentLanguage;
+            language = NormalizeLanguageCode(language ?? CurrentLanguage);
 
-            if (Translations.TryGetValue(language, out var languageDict) &&
-                languageDict.TryGetValue(key, out var value))
+            if (Translations.TryGetValue(language, out var langDict) &&
+                langDict.TryGetValue(key, out var langValue))
             {
-                return value;
+                return langValue;
+            }
+
+            if (Translations.TryGetValue("en", out var enDict) &&
+                enDict.TryGetValue(key, out var enValue))
+            {
+                return enValue;
+            }
+
+            if (Translations.TryGetValue("vi", out var viDict) &&
+                viDict.TryGetValue(key, out var viValue))
+            {
+                return viValue;
             }
 
             return key;
         }
 
-        public List<string> SupportedLanguages => new() { "vi", "en", "zh", "ja" };
+        public List<string> SupportedLanguages => new() { "vi", "en", "zh", "ja", "ru", "fr" };
+
+        public string NormalizeLanguageCode(string? language)
+        {
+            var normalized = (language ?? "vi").Trim().ToLowerInvariant();
+            return normalized switch
+            {
+                "jp" => "ja",
+                _ => normalized
+            };
+        }
+
+        public string GetLanguageDisplayName(string language)
+        {
+            var normalized = NormalizeLanguageCode(language);
+            return normalized switch
+            {
+                "vi" => "🇻🇳 Tiếng Việt",
+                "en" => "🇬🇧 English",
+                "zh" => "🇨🇳 中文",
+                "ja" => "🇯🇵 日本語",
+                "ru" => "🇷🇺 Русский",
+                "fr" => "🇫🇷 Français",
+                _ => normalized
+            };
+        }
     }
 }

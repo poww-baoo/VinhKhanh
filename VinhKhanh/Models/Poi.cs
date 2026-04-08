@@ -15,9 +15,17 @@ public class Poi
 
     public string History { get; set; } = "";
     public string HistoryEn { get; set; } = "";
+    public string HistoryJp { get; set; } = "";
+    public string HistoryZh { get; set; } = "";
+    public string HistoryRu { get; set; } = "";
+    public string HistoryFr { get; set; } = "";
 
     public string Address { get; set; } = "";
     public string AdrEn { get; set; } = "";
+    public string AdrJp { get; set; } = "";
+    public string AdrZh { get; set; } = "";
+    public string AdrRu { get; set; } = "";
+    public string AdrFr { get; set; } = "";
 
     public string TextVi { get; set; } = "";
     public string TextEn { get; set; } = "";
@@ -52,17 +60,37 @@ public class Poi
     public string GetHistoryByLanguage(string language)
     {
         var normalized = (language ?? "vi").Trim().ToLowerInvariant();
-        return normalized == "en" && !string.IsNullOrWhiteSpace(HistoryEn)
-            ? HistoryEn
-            : History;
+
+        var history = normalized switch
+        {
+            "en" => HistoryEn,
+            "ja" => HistoryJp,
+            "jp" => HistoryJp,
+            "zh" => HistoryZh,
+            "ru" => HistoryRu,
+            "fr" => HistoryFr,
+            _ => History
+        };
+
+        return string.IsNullOrWhiteSpace(history) ? History : history;
     }
 
     public string GetAddressByLanguage(string language)
     {
         var normalized = (language ?? "vi").Trim().ToLowerInvariant();
-        return normalized == "en" && !string.IsNullOrWhiteSpace(AdrEn)
-            ? AdrEn
-            : Address;
+
+        var address = normalized switch
+        {
+            "en" => AdrEn,
+            "ja" => AdrJp,
+            "jp" => AdrJp,
+            "zh" => AdrZh,
+            "ru" => AdrRu,
+            "fr" => AdrFr,
+            _ => Address
+        };
+
+        return string.IsNullOrWhiteSpace(address) ? Address : address;
     }
 
     public string GetTextByLanguage(string language)

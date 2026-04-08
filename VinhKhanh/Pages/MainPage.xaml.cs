@@ -96,12 +96,6 @@ namespace VinhKhanh.Pages
 
                 var pois = await _databaseService.GetAllPoisAsync();
 
-                if (_localizationService.CurrentLanguage == "en")
-                {
-                    await _translationService.EnsureEnglishColumnsAsync(pois);
-                    pois = await _databaseService.GetAllPoisAsync();
-                }
-
                 _restaurants = pois
                     .Select(MapPoiToRestaurant)
                     .OrderBy(r => r.Priority)
@@ -139,16 +133,28 @@ namespace VinhKhanh.Pages
                 CategoryName = poi.CategoryName,
                 Name = poi.Name,
                 YearEstablished = poi.YearEstablished,
+
                 History = poi.History,
                 HistoryEn = poi.HistoryEn,
+                HistoryJp = poi.HistoryJp,
+                HistoryZh = poi.HistoryZh,
+                HistoryRu = poi.HistoryRu,
+                HistoryFr = poi.HistoryFr,
+
                 Address = poi.Address,
                 AdrEn = poi.AdrEn,
+                AdrJp = poi.AdrJp,
+                AdrZh = poi.AdrZh,
+                AdrRu = poi.AdrRu,
+                AdrFr = poi.AdrFr,
+
                 TextVi = poi.TextVi,
                 TextEn = poi.TextEn,
                 TextZh = poi.TextZh,
                 TextJa = poi.TextJa,
                 TextRu = poi.TextRu,
                 TextFr = poi.TextFr,
+
                 Highlights = highlights,
                 Rating = poi.Rating,
                 Latitude = poi.Lat,

@@ -33,30 +33,12 @@
                                FontSize="16" 
                                FontAttributes="Bold" 
                                TextColor="#1F1F1F"/>
-                        <HorizontalStackLayout Spacing="8">
-                            <Button x:Name="ViLanguageButton"
-                                   Text="🇻🇳 Vietnamese" 
-                                   Clicked="OnLanguageChanged" 
-                                   CommandParameter="vi" 
-                                   HorizontalOptions="FillAndExpand" 
-                                   BackgroundColor="#FF6B35" 
-                                   TextColor="White" 
-                                   Padding="8,6" 
-                                   CornerRadius="6" 
-                                   FontSize="12" 
-                                   BorderWidth="0"/>
-                            <Button x:Name="EnLanguageButton"
-                                   Text="🇬🇧 English" 
-                                   Clicked="OnLanguageChanged" 
-                                   CommandParameter="en" 
-                                   HorizontalOptions="FillAndExpand" 
-                                   BackgroundColor="#E0E0E0" 
-                                   TextColor="#1F1F1F" 
-                                   Padding="8,6" 
-                                   CornerRadius="6" 
-                                   FontSize="12" 
-                                   BorderWidth="0"/>
-                        </HorizontalStackLayout>
+
+                        <Picker x:Name="LanguagePicker"
+                                Title="Select language"
+                                SelectedIndexChanged="OnLanguagePickerChanged"
+                                BackgroundColor="White"
+                                TextColor="#1F1F1F"/>
                     </VerticalStackLayout>
                 </Frame>
 

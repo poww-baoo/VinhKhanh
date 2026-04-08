@@ -10,7 +10,7 @@ public class DatabaseService
     private readonly SemaphoreSlim _syncLock = new(1, 1);
 
     private const string SeedDbVersionKey = "SeedDbVersion";
-    private const int CurrentSeedDbVersion = 7;  // ← Tăng lên (đã làm rồi)
+    private const int CurrentSeedDbVersion = 7;
 
     private static string DbPath =>
         Path.Combine(FileSystem.AppDataDirectory, "vinhkhanh.db");
@@ -20,15 +20,13 @@ public class DatabaseService
         if (_initialized) return;
 
         var savedVersion = Preferences.Get(SeedDbVersionKey, 0);
-        // Chỉ copy lại DB nếu file không tồn tại HOẶC version cũ hơn
         var needCopySeedDb = !File.Exists(DbPath) || savedVersion < CurrentSeedDbVersion;
 
         if (needCopySeedDb)
         {
             if (File.Exists(DbPath))
-                File.Delete(DbPath);  // ← Xóa DB cũ
+                File.Delete(DbPath);
 
-            // Copy DB từ Assets
             await using var stream = await FileSystem.OpenAppPackageFileAsync("vinhkhanh.db");
             await using var dest = File.Create(DbPath);
             await stream.CopyToAsync(dest);
@@ -38,60 +36,13 @@ public class DatabaseService
 
         _db = new SQLiteAsyncConnection(DbPath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.SharedCache);
 
-        await EnsurePoiSchemaAsync();  // ← Thêm 2 cột nếu chưa có
-
         _initialized = true;
-    }
-
-    private async Task EnsurePoiSchemaAsync()
-    {
-        if (_db is null) return;
-
-        if (!await ColumnExistsAsync("Pois", "HistoryEn"))
-        {
-            await _db.ExecuteAsync("ALTER TABLE Pois ADD COLUMN HistoryEn TEXT NOT NULL DEFAULT '';" );
-        }
-
-        if (!await ColumnExistsAsync("Pois", "AdrEn"))
-        {
-            await _db.ExecuteAsync("ALTER TABLE Pois ADD COLUMN AdrEn TEXT NOT NULL DEFAULT '';" );
-        }
-    }
-
-    private async Task<bool> ColumnExistsAsync(string tableName, string columnName)
-    {
-        if (_db is null) return false;
-
-        var rows = await _db.QueryAsync<PragmaTableInfoRow>($"PRAGMA table_info([{tableName}]);");
-        return rows.Any(r => string.Equals(r.name, columnName, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private sealed class PragmaTableInfoRow
-    {
-        public string name { get; set; } = string.Empty;
     }
 
     private void EnsureInit()
     {
         if (!_initialized || _db is null)
             throw new InvalidOperationException("Gọi InitAsync() trước.");
-    }
-
-    public async Task<List<Poi>> GetPoisMissingEnglishFieldsAsync()
-    {
-        EnsureInit();
-        return await _db!.QueryAsync<Poi>(
-            "SELECT * FROM Pois WHERE IFNULL(HistoryEn,'') = '' OR IFNULL(AdrEn,'') = ''");
-    }
-
-    public async Task UpdatePoiEnglishFieldsAsync(int poiId, string historyEn, string adrEn)
-    {
-        EnsureInit();
-        await _db!.ExecuteAsync(
-            "UPDATE Pois SET HistoryEn = ?, AdrEn = ? WHERE Id = ?",
-            historyEn ?? string.Empty,
-            adrEn ?? string.Empty,
-            poiId);
     }
 
     public async Task ReplaceSeedDataAsync(
@@ -105,7 +56,6 @@ public class DatabaseService
         var poiList = pois?.ToList() ?? new List<Poi>();
         var menuItemList = menuItems?.ToList() ?? new List<PoiMenuItem>();
 
-        // Bảo vệ dữ liệu local: chỉ ghi đè khi có dữ liệu POI hợp lệ từ nguồn sync
         if (poiList.Count == 0)
         {
             System.Diagnostics.Debug.WriteLine("[DatabaseService] Skip ReplaceSeedDataAsync because POI list is empty.");

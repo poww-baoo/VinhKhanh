@@ -10,9 +10,17 @@
 
         public string History { get; set; } = string.Empty;
         public string HistoryEn { get; set; } = string.Empty;
+        public string HistoryJp { get; set; } = string.Empty;
+        public string HistoryZh { get; set; } = string.Empty;
+        public string HistoryRu { get; set; } = string.Empty;
+        public string HistoryFr { get; set; } = string.Empty;
 
         public string Address { get; set; } = string.Empty;
         public string AdrEn { get; set; } = string.Empty;
+        public string AdrJp { get; set; } = string.Empty;
+        public string AdrZh { get; set; } = string.Empty;
+        public string AdrRu { get; set; } = string.Empty;
+        public string AdrFr { get; set; } = string.Empty;
 
         public string TextVi { get; set; } = string.Empty;
         public string TextEn { get; set; } = string.Empty;
@@ -37,17 +45,37 @@
         public string GetHistoryByLanguage(string language)
         {
             var normalized = (language ?? "vi").Trim().ToLowerInvariant();
-            return normalized == "en" && !string.IsNullOrWhiteSpace(HistoryEn)
-                ? HistoryEn
-                : History;
+
+            var history = normalized switch
+            {
+                "en" => HistoryEn,
+                "ja" => HistoryJp,
+                "jp" => HistoryJp,
+                "zh" => HistoryZh,
+                "ru" => HistoryRu,
+                "fr" => HistoryFr,
+                _ => History
+            };
+
+            return string.IsNullOrWhiteSpace(history) ? History : history;
         }
 
         public string GetAddressByLanguage(string language)
         {
             var normalized = (language ?? "vi").Trim().ToLowerInvariant();
-            return normalized == "en" && !string.IsNullOrWhiteSpace(AdrEn)
-                ? AdrEn
-                : Address;
+
+            var address = normalized switch
+            {
+                "en" => AdrEn,
+                "ja" => AdrJp,
+                "jp" => AdrJp,
+                "zh" => AdrZh,
+                "ru" => AdrRu,
+                "fr" => AdrFr,
+                _ => Address
+            };
+
+            return string.IsNullOrWhiteSpace(address) ? Address : address;
         }
 
         public string GetTextByLanguage(string language)
@@ -65,7 +93,7 @@
             };
 
             return string.IsNullOrWhiteSpace(text)
-                ? (string.IsNullOrWhiteSpace(TextVi) ? History : TextVi)
+                ? (string.IsNullOrWhiteSpace(History) ? string.Empty : History)
                 : text;
         }
     }

@@ -6,6 +6,7 @@ namespace VinhKhanh.Pages
     public partial class SettingsPage : ContentPage
     {
         private readonly LocalizationService _localizationService;
+        private List<string> _languageCodes = new();
 
         public SettingsPage()
         {
@@ -13,44 +14,47 @@ namespace VinhKhanh.Pages
             _localizationService = LocalizationService.Instance;
             _localizationService.LanguageChanged += OnLanguageChangedEvent;
 
+            BuildLanguagePicker();
             UpdateUI(_localizationService.CurrentLanguage);
         }
 
-        private void OnLanguageChanged(object sender, EventArgs e)
+        private void BuildLanguagePicker()
         {
-            if (sender is not Button { CommandParameter: string language })
+            _languageCodes = _localizationService.SupportedLanguages;
+
+            LanguagePicker.ItemsSource = _languageCodes
+                .Select(code => _localizationService.GetLanguageDisplayName(code))
+                .ToList();
+
+            var currentCode = _localizationService.NormalizeLanguageCode(_localizationService.CurrentLanguage);
+            var index = _languageCodes.FindIndex(x => x == currentCode);
+            LanguagePicker.SelectedIndex = index >= 0 ? index : 0;
+        }
+
+        private void OnLanguagePickerChanged(object sender, EventArgs e)
+        {
+            if (LanguagePicker.SelectedIndex < 0 || LanguagePicker.SelectedIndex >= _languageCodes.Count)
                 return;
 
-            _localizationService.CurrentLanguage = language;
+            var selectedLanguage = _languageCodes[LanguagePicker.SelectedIndex];
+            _localizationService.CurrentLanguage = selectedLanguage;
         }
 
         private void OnLanguageChangedEvent(object? sender, EventArgs e)
         {
+            var currentCode = _localizationService.NormalizeLanguageCode(_localizationService.CurrentLanguage);
+            var index = _languageCodes.FindIndex(x => x == currentCode);
+            if (index >= 0 && LanguagePicker.SelectedIndex != index)
+            {
+                LanguagePicker.SelectedIndex = index;
+            }
+
             UpdateUI(_localizationService.CurrentLanguage);
         }
 
         private void UpdateUI(string language)
         {
-            UpdateLanguageButtonUI(language);
             UpdatePageTexts(language);
-        }
-
-        private void UpdateLanguageButtonUI(string selectedLanguage)
-        {
-            if (selectedLanguage == "vi")
-            {
-                ViLanguageButton.BackgroundColor = Color.FromArgb("#FF6B35");
-                ViLanguageButton.TextColor = Colors.White;
-                EnLanguageButton.BackgroundColor = Color.FromArgb("#E0E0E0");
-                EnLanguageButton.TextColor = Color.FromArgb("#1F1F1F");
-            }
-            else
-            {
-                EnLanguageButton.BackgroundColor = Color.FromArgb("#FF6B35");
-                EnLanguageButton.TextColor = Colors.White;
-                ViLanguageButton.BackgroundColor = Color.FromArgb("#E0E0E0");
-                ViLanguageButton.TextColor = Color.FromArgb("#1F1F1F");
-            }
         }
 
         private void UpdatePageTexts(string language)

@@ -37,39 +37,10 @@ public class TranslationService
         return Task.FromResult(text);
     }
 
-    public async Task EnsureEnglishColumnsAsync(IEnumerable<Poi>? source = null, CancellationToken cancellationToken = default)
-    {
-        await _db.InitAsync();
-
-        var pois = source?.ToList() ?? await _db.GetPoisMissingEnglishFieldsAsync();
-        foreach (var poi in pois)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var historyEn = string.IsNullOrWhiteSpace(poi.HistoryEn)
-                ? await TranslateAsync(poi.History, "vi", "en") ?? poi.History
-                : poi.HistoryEn;
-
-            var adrEn = string.IsNullOrWhiteSpace(poi.AdrEn)
-                ? await TranslateAsync(poi.Address, "vi", "en") ?? poi.Address
-                : poi.AdrEn;
-
-            if (!string.Equals(historyEn, poi.HistoryEn, StringComparison.Ordinal) ||
-                !string.Equals(adrEn, poi.AdrEn, StringComparison.Ordinal))
-            {
-                poi.HistoryEn = historyEn;
-                poi.AdrEn = adrEn;
-                await _db.UpdatePoiEnglishFieldsAsync(poi.Id, historyEn, adrEn);
-            }
-        }
-    }
-
     public async Task PrefetchAsync(IEnumerable<Poi> pois, string language = "en")
     {
-        if (language == "en")
-        {
-            await EnsureEnglishColumnsAsync(pois);
-        }
+        // Prefetch is now a no-op since automatic translation is disabled
+        await Task.CompletedTask;
     }
 
     private sealed class MyMemoryResponse
