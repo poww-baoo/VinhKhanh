@@ -21,9 +21,6 @@ namespace VinhKhanh.Pages
         /// <summary>Lưu trữ kết quả quét mã QR cuối cùng để tránh quét lặp lại</summary>
         private string? _lastScannedResult;
 
-        /// <summary>Trạng thái đèn pin (bật/tắt)</summary>
-        private bool _isFlashlightOn = false;
-
         /// <summary>
         /// Cờ kiểm soát xử lý để tránh xử lý nhiều mã QR cùng lúc
         /// Khi đang xử lý mã này, không xử lý mã tiếp theo
@@ -77,7 +74,7 @@ namespace VinhKhanh.Pages
         /// - Bật camera quét mã QR
         /// - Yêu cầu quyền truy cập camera
         /// 
-        /// QUAN TRỌNG: Delay 500ms để đảm bảo camera ready
+        /// QUAN TRỌNG: Delay 700ms để đảm bảo camera ready
         /// </summary>
         protected override async void OnAppearing()
         {
@@ -102,7 +99,6 @@ namespace VinhKhanh.Pages
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     ConfigureScanner();
-                    QRScannerView.IsTorchOn = _isFlashlightOn;
                     QRScannerView.IsDetecting = true;
                     Debug.WriteLine("QRCodePage: Camera được bật + scanner configured");
                 });
@@ -125,8 +121,6 @@ namespace VinhKhanh.Pages
             {
                 Debug.WriteLine("QRCodePage.OnDisappearing: Trang đang ẩn...");
 
-                _isFlashlightOn = false;
-                QRScannerView.IsTorchOn = false;
                 QRScannerView.IsDetecting = false;
 
                 Debug.WriteLine("QRCodePage: Camera chuyển sang trạng thái nghỉ");
@@ -151,6 +145,7 @@ namespace VinhKhanh.Pages
         /// <summary>
         /// Cập nhật giao diện theo ngôn ngữ hiện tại
         /// - Cập nhật tiêu đề trang
+        /// - Cập nhật label hướng dẫn
         /// </summary>
         private void UpdateUI()
         {
@@ -161,18 +156,12 @@ namespace VinhKhanh.Pages
 
         // ============ QUẢN LÝ QUYỀN VÀ CAMERA ============
         /// <summary>
-        /// Yêu cầu quyền truy cập camera từ hệ điều hành (async version)
+        /// Yêu cầu quyền truy cập camera từ hệ điều hành
         /// 
         /// MAUI PermissionStatus chỉ có 3 trạng thái:
         /// - Granted: Quyền được cấp
         /// - Denied: Quyền bị từ chối
-        /// - Unknown: Trạng thái không xác định (chưa hỏi, hoặc lỗi)
-        /// 
-        /// Các bước:
-        /// 1. Kiểm tra xem quyền camera đã được cấp chưa
-        /// 2. Nếu chưa, yêu cầu người dùng cấp quyền
-        /// 3. Nếu được cấp quyền, sẵn sàng quét
-        /// 4. Nếu bị từ chối hoặc Unknown, hiển thị thông báo lỗi
+        /// - Unknown: Trạng thái không xác định
         /// </summary>
         private async Task<bool> RequestCameraPermissionAsync()
         {
@@ -230,32 +219,22 @@ namespace VinhKhanh.Pages
         /// <summary>
         /// Sự kiện được gọi khi máy quét phát hiện mã vạch/QR
         /// 
-        /// QUAN TRỌNG: Hàm này được gọi nhiều lần trên luồng nền
-        /// Phải kiểm soát để tránh xử lý lặp lại
-        /// 
-        /// Luồng xử lý:
-        /// 1. Kiểm tra xem có đang xử lý mã khác không
-        /// 2. Lấy mã QR từ kết quả phát hiện
-        /// 3. Kiểm tra ID có hợp lệ không
-        /// 4. Gửi sang xử lý chính
+        /// Kiểm soát để tránh xử lý lặp lại
         /// </summary>
         private void OnBarcodesDetected(object sender, BarcodeDetectionEventArgs e)
         {
             try
             {
-                // Bước 1: Kiểm tra xem có đang xử lý mã khác không
                 if (_isProcessing)
                 {
                     return;
                 }
 
-                // Bước 2: Kiểm tra xem có kết quả phát hiện không
                 if (e.Results == null || !e.Results.Any())
                 {
                     return;
                 }
 
-                // Bước 3: Lấy mã QR đầu tiên
                 var barcode = e.Results.FirstOrDefault();
                 if (barcode == null)
                 {
@@ -264,27 +243,23 @@ namespace VinhKhanh.Pages
 
                 var result = barcode.Value?.Trim();
                 
-                // Bước 4: Kiểm tra xem mã QR có hợp lệ không
                 if (string.IsNullOrEmpty(result))
                 {
                     Debug.WriteLine("QRCodePage: Mã QR trống");
                     return;
                 }
 
-                // Bước 5: Kiểm tra xem mã QR có trùng lặp với mã trước không
                 if (result == _lastScannedResult)
                 {
                     Debug.WriteLine($"QRCodePage: Mã QR trùng lặp - {result}");
                     return;
                 }
 
-                // Đánh dấu đang xử lý
                 _isProcessing = true;
                 _lastScannedResult = result;
 
                 Debug.WriteLine($"✅ QRCodePage: Phát hiện mã QR mới - {result}");
 
-                // Xử lý mã QR trên Main Thread (vì nó liên quan đến UI)
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
                     await ProcessQRCodeAsync(result);
@@ -315,17 +290,14 @@ namespace VinhKhanh.Pages
 
                 Debug.WriteLine($"🔍 QRCodePage: Đang tìm kiếm nhà hàng với ID: {qrCodeId}");
 
-                // Bước 1: Tắt máy quét để tránh phát hiện lặp lại
                 QRScannerView.IsDetecting = false;
 
-                // Bước 2: Tìm kiếm nhà hàng từ ID
                 var restaurant = await _qrCodeService.GetRestaurantFromIdAsync(qrCodeId);
 
                 if (restaurant != null)
                 {
                     Debug.WriteLine($"✅ QRCodePage: Tìm thấy nhà hàng - {restaurant.Name}");
 
-                    // Bước 3: Chuyển trang đến RestaurantDetailPage
                     await Shell.Current.GoToAsync(
                         $"restaurantdetail?id={restaurant.Id}",
                         new Dictionary<string, object>
@@ -336,7 +308,6 @@ namespace VinhKhanh.Pages
                 }
                 else
                 {
-                    // Bước 4: Không tìm thấy nhà hàng
                     Debug.WriteLine($"❌ QRCodePage: Không tìm thấy nhà hàng với ID: {qrCodeId}");
                     
                     await DisplayAlert(
@@ -344,7 +315,6 @@ namespace VinhKhanh.Pages
                         $"ID: {qrCodeId}\n\n{_localizationService.GetString("RestaurantNotFound", language)}\n\n{_localizationService.GetString("ScanOtherQR", language)}",
                         _localizationService.GetString("OK", language));
 
-                    // Bước 5: Reset trạng thái để quét lại
                     _isProcessing = false;
                     _lastScannedResult = null;
                     QRScannerView.IsDetecting = true;
@@ -360,49 +330,9 @@ namespace VinhKhanh.Pages
                     $"{_localizationService.GetString("LoadRestaurantError", language)}\n{ex.Message}",
                     _localizationService.GetString("OK", language));
 
-                // Reset trạng thái để quét lại
                 _isProcessing = false;
                 _lastScannedResult = null;
                 QRScannerView.IsDetecting = true;
-            }
-        }
-
-        // ============ QUẢN LÝ ĐÈN PIN ============
-        /// <summary>
-        /// Bật/tắt đèn pin của điện thoại
-        /// 
-        /// Các bước:
-        /// 1. Chuyển đổi trạng thái đèn pin
-        /// 2. Cập nhật màu nút để hiển thị trạng thái
-        /// 3. Gọi API Flashlight để bật/tắt đèn pin thực tế
-        /// 4. Hiển thị thông báo lỗi nếu thiết bị không hỗ trợ đèn pin
-        /// </summary>
-        private async void OnFlashlightToggleClicked(object sender, EventArgs e)
-        {
-            try
-            {
-                _isFlashlightOn = !_isFlashlightOn;
-                QRScannerView.IsTorchOn = _isFlashlightOn;
-
-                FlashlightToggleButton.BackgroundColor = _isFlashlightOn
-                    ? Color.FromArgb("#FFC107")
-                    : Color.FromArgb("#FF6B35");
-
-                Debug.WriteLine($"QRCodePage: Torch = {(_isFlashlightOn ? "ON" : "OFF")}");
-            }
-            catch (Exception ex)
-            {
-                _isFlashlightOn = false;
-                QRScannerView.IsTorchOn = false;
-                FlashlightToggleButton.BackgroundColor = Color.FromArgb("#FF6B35");
-
-                var language = _localizationService.CurrentLanguage;
-                Debug.WriteLine($"❌ QRCodePage.OnFlashlightToggleClicked: Lỗi - {ex.Message}");
-
-                await DisplayAlert(
-                    _localizationService.GetString("Error", language),
-                    _localizationService.GetString("FlashlightNotSupported", language),
-                    _localizationService.GetString("OK", language));
             }
         }
 
@@ -410,7 +340,6 @@ namespace VinhKhanh.Pages
         {
             QRScannerView.Options = new BarcodeReaderOptions
             {
-                // chỉ scan nhóm 2D (bao gồm QR), tương thích nhiều version ZXing.Net.Maui
                 Formats = BarcodeFormats.TwoDimensional,
                 AutoRotate = true,
                 Multiple = false
