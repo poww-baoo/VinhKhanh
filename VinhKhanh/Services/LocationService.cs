@@ -18,6 +18,7 @@ namespace VinhKhanh.Services
 
         private Dictionary<string, DateTime> _geofenceEntryTimes = new();
         private Dictionary<string, DateTime> _lastPlaybackTimes = new();
+        private bool _isFirstLocationUpdate = true;
 
         public async Task StartTrackingAsync(List<Restaurant> restaurants)
         {
@@ -45,19 +46,27 @@ namespace VinhKhanh.Services
 
                 IsBusy = true;
                 _cts = new CancellationTokenSource();
+                _isFirstLocationUpdate = true;
 
                 while (!_cts.Token.IsCancellationRequested)
                 {
                     try
                     {
                         var location = await GetCurrentLocationAsync();
-                        if (location != null &&
-                            (DateTime.Now - _lastLocationUpdate).TotalSeconds >= _debounceSeconds)
+                        if (location != null)
                         {
-                            LocationUpdated?.Invoke(this, location);
-                            _lastLocationUpdate = DateTime.Now;
+                            // Lần đầu tiên cập nhật location ngay lập tức, sau đó có debounce
+                            bool shouldUpdate = _isFirstLocationUpdate || 
+                                               (DateTime.Now - _lastLocationUpdate).TotalSeconds >= _debounceSeconds;
 
-                            CheckGeofences(location, restaurants);
+                            if (shouldUpdate)
+                            {
+                                LocationUpdated?.Invoke(this, location);
+                                _lastLocationUpdate = DateTime.Now;
+                                _isFirstLocationUpdate = false;
+
+                                CheckGeofences(location, restaurants);
+                            }
                         }
 
                         await Task.Delay(2000, _cts.Token);
@@ -96,6 +105,7 @@ namespace VinhKhanh.Services
         {
             _cts?.Cancel();
             IsBusy = false;
+            _isFirstLocationUpdate = true;
         }
 
         private void CheckGeofences(Location userLocation, List<Restaurant> restaurants)

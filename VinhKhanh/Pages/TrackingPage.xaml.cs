@@ -64,6 +64,16 @@ public partial class TrackingPage : ContentPage
 		_locationService = locationService;
 	}
 
+	/// <summary>
+	/// Bắt đầu tracking tự động khi app mở (gọi từ MainPage)
+	/// </summary>
+	public async void EnableTrackingUI()
+	{
+		_isTrackingEnabled = true;
+		UpdateTrackingUI();
+		// Update UI trạng thái nhưng không cần gọi StartTracking lại vì LocationService đã được khởi động
+	}
+
 	private void OnTrackingToggleClicked(object sender, EventArgs e)
 	{
 		_isTrackingEnabled = !_isTrackingEnabled;

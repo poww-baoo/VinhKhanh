@@ -9,12 +9,8 @@ namespace VinhKhanh.Pages
     public partial class MainPage : ContentPage
     {
         private const string TrackAsiaApiKey = "3a82d12156488a8391773657171aacb765";
-
-        // Nếu SDK URL của TrackAsia docs khác, chỉ cần đổi 2 URL này
         private const string TrackAsiaCssUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.css";
         private const string TrackAsiaJsUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.js";
-
-        // Fallback chắc chắn có sẵn
         private const string MapLibreCssUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
         private const string MapLibreJsUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
 
@@ -40,6 +36,7 @@ namespace VinhKhanh.Pages
         private View? _qrcodeContent;
 
         private bool _isDataLoaded;
+        private bool _isTrackingStarted = false;
 
         public MainPage()
         {
@@ -83,6 +80,8 @@ namespace VinhKhanh.Pages
             if (_isDataLoaded) return;
             _isDataLoaded = true;
             await LoadDataFromDatabaseAsync();
+
+            InitializeTracking();
         }
 
         private async Task LoadDataFromDatabaseAsync()
@@ -114,6 +113,24 @@ namespace VinhKhanh.Pages
                         $"{_localizationService.GetString("CannotLoadData", language)}: {ex.Message}",
                         _localizationService.GetString("OK", language));
                 });
+            }
+        }
+
+        private void InitializeTracking()
+        {
+            if (_isTrackingStarted || _restaurants.Count == 0)
+                return;
+
+            _isTrackingStarted = true;
+
+            try
+            {
+                _ = _locationService.StartTrackingAsync(_restaurants);
+                _trackingPage.EnableTrackingUI();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainPage] Error starting tracking: {ex.Message}");
             }
         }
 
