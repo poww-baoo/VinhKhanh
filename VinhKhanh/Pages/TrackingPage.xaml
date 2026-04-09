@@ -38,13 +38,21 @@
         <Frame CornerRadius="12" Padding="16" BorderColor="#27AE60" HasShadow="False">
             <VerticalStackLayout Spacing="8">
                 <Label x:Name="NearbyRestaurantsTitleLabel" Text="🍽️ Quán Ăn Gần Bạn" FontSize="16" FontAttributes="Bold"/>
-                <CollectionView x:Name="RestaurantsCollection" HeightRequest="300">
+                <CollectionView x:Name="RestaurantsCollection"
+                                HeightRequest="300"
+                                SelectionMode="Single"
+                                SelectionChanged="OnNearbyRestaurantSelectionChanged">
                     <CollectionView.ItemsLayout>
                         <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Frame CornerRadius="8" Padding="12" BorderColor="#E0E0E0" HasShadow="False">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnNearbyRestaurantTapped"
+                                                          CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+
                                 <VerticalStackLayout Spacing="4">
                                     <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold"/>
                                     <Label Text="{Binding Highlights}" FontSize="11" TextColor="#666666"/>

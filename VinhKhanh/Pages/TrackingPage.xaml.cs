@@ -12,8 +12,13 @@ public partial class TrackingPage : ContentPage
 	private LocationService? _locationService;
 	private readonly LocalizationService _localizationService;
 
+	private string? _lastApproachingRestaurantId;
+	private DateTime _lastApproachingStatusAt = DateTime.MinValue;
+
 	private const double NearbyRadiusMeters = 3000000;
-	private const int MaxNearbyRestaurants = 10;
+	private const int MaxNearbyRestaurants = 3;
+	private const int ApproachingCooldownSeconds = 5;
+	private const double ApproachingExtraMeters = 120;
 
 	public TrackingPage()
 	{
@@ -147,6 +152,9 @@ public partial class TrackingPage : ContentPage
 			{
 				_locationService.StopTracking();
 
+				_lastApproachingRestaurantId = null;
+				_lastApproachingStatusAt = DateTime.MinValue;
+
 				_nearbyRestaurants.Clear();
 				RestaurantsCollection.ItemsSource = null;
 				RestaurantsCollection.ItemsSource = _nearbyRestaurants;
@@ -183,6 +191,7 @@ public partial class TrackingPage : ContentPage
 			LocationLabel.Text = $"{_localizationService.GetString("Latitude", language)}: {location.Latitude:F4}, {_localizationService.GetString("Longitude", language)}: {location.Longitude:F4}";
 
 			RefreshNearbyRestaurants();
+			UpdateApproachingStatus(); // <-- thêm dòng này
 		}
 		catch (Exception ex)
 		{
@@ -215,6 +224,54 @@ public partial class TrackingPage : ContentPage
 					_localizationService.GetString("OK", language));
 			});
 		}
+	}
+
+	private void UpdateApproachingStatus()
+	{
+		if (!_isTrackingEnabled || _currentLocation is null || _allRestaurants.Count == 0)
+			return;
+
+		var language = _localizationService.CurrentLanguage;
+		var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
+
+		// Tránh ghi đè khi đang phát thuyết minh
+		if (!string.IsNullOrWhiteSpace(StatusLabel.Text) &&
+			StatusLabel.Text.StartsWith(playingText, StringComparison.OrdinalIgnoreCase))
+		{
+			return;
+		}
+
+		var nearest = _allRestaurants
+			.Select(r => new
+			{
+				Restaurant = r,
+				Distance = GetDistanceInMeters(
+					_currentLocation.Latitude,
+					_currentLocation.Longitude,
+					r.Latitude,
+					r.Longitude)
+			})
+			.OrderBy(x => x.Distance)
+			.FirstOrDefault();
+
+		if (nearest is null) return;
+
+		var threshold = Math.Max(nearest.Restaurant.GeofenceRadius + ApproachingExtraMeters, 150);
+		var isApproaching = nearest.Distance <= threshold && nearest.Distance > nearest.Restaurant.GeofenceRadius;
+		if (!isApproaching) return;
+
+		var now = DateTime.Now;
+		var canUpdate =
+			_lastApproachingRestaurantId != nearest.Restaurant.Id ||
+			(now - _lastApproachingStatusAt).TotalSeconds >= ApproachingCooldownSeconds;
+
+		if (!canUpdate) return;
+
+		_lastApproachingRestaurantId = nearest.Restaurant.Id;
+		_lastApproachingStatusAt = now;
+
+		var approachingPrefix = _localizationService.GetString("Tracking_Status_Approaching", language);
+		UpdateStatus($"{approachingPrefix} {nearest.Restaurant.Name} ({nearest.Distance:F0}m)");
 	}
 
     private void RefreshNearbyRestaurants()
@@ -266,5 +323,46 @@ public partial class TrackingPage : ContentPage
 
 		var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
 		return earthRadius * c;
+	}
+
+	private async Task NavigateToRestaurantDetailAsync(Restaurant restaurant)
+	{
+		try
+		{
+			await Navigation.PushAsync(new RestaurantDetailPage(restaurant));
+		}
+		catch (Exception ex)
+		{
+			var language = _localizationService.CurrentLanguage;
+			await DisplayAlert(
+				_localizationService.GetString("Error", language),
+				$"{_localizationService.GetString("CannotLoadPage", language)}: {ex.Message}",
+				_localizationService.GetString("OK", language));
+		}
+	}
+
+	private async void OnNearbyRestaurantTapped(object? sender, TappedEventArgs e)
+	{
+		if (e.Parameter is not Restaurant restaurant)
+		{
+			return;
+		}
+
+		await NavigateToRestaurantDetailAsync(restaurant);
+	}
+
+	private async void OnNearbyRestaurantSelectionChanged(object? sender, SelectionChangedEventArgs e)
+	{
+		if (e.CurrentSelection.FirstOrDefault() is not Restaurant restaurant)
+		{
+			return;
+		}
+
+		if (sender is CollectionView collectionView)
+		{
+			collectionView.SelectedItem = null;
+		}
+
+		await NavigateToRestaurantDetailAsync(restaurant);
 	}
 }

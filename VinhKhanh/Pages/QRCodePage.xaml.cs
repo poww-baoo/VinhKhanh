@@ -32,6 +32,11 @@ namespace VinhKhanh.Pages
         /// </summary>
         private bool _isProcessing = false;
 
+        /// <summary>
+        /// Cờ đánh dấu việc đã chuyển trang hay chưa
+        /// </summary>
+        private bool _hasNavigated = false;
+
         /// <summary>Dịch vụ đa ngôn ngữ (Tiếng Việt, Tiếng Anh)</summary>
         private readonly LocalizationService _localizationService;
 
@@ -102,6 +107,7 @@ namespace VinhKhanh.Pages
                 Debug.WriteLine("QRCodePage.OnAppearing: Trang đang xuất hiện...");
 
                 _isProcessing = false;
+                _hasNavigated = false; // reset mỗi lần quay lại trang scan
                 _lastScannedResult = null;
 
                 var hasPermission = await RequestCameraPermissionAsync();
@@ -243,7 +249,7 @@ namespace VinhKhanh.Pages
         {
             try
             {
-                if (_isProcessing)
+                if (_isProcessing || _hasNavigated)
                 {
                     return;
                 }
@@ -254,14 +260,9 @@ namespace VinhKhanh.Pages
                 }
 
                 var barcode = e.Results.FirstOrDefault();
-                if (barcode == null)
-                {
-                    return;
-                }
+                var result = barcode?.Value?.Trim();
 
-                var result = barcode.Value?.Trim();
-                
-                if (string.IsNullOrEmpty(result))
+                if (string.IsNullOrWhiteSpace(result))
                 {
                     Debug.WriteLine("QRCodePage: Mã QR trống");
                     return;
@@ -276,9 +277,12 @@ namespace VinhKhanh.Pages
                 _isProcessing = true;
                 _lastScannedResult = result;
 
+                // tắt detect ngay để không bị quét lặp
+                MainThread.BeginInvokeOnMainThread(() => QRScannerView.IsDetecting = false);
+
                 Debug.WriteLine($"✅ QRCodePage: Phát hiện mã QR mới - {result}");
 
-                MainThread.BeginInvokeOnMainThread(async () =>
+                _ = MainThread.InvokeOnMainThreadAsync(async () =>
                 {
                     await ProcessQRCodeAsync(result);
                 });
@@ -308,30 +312,27 @@ namespace VinhKhanh.Pages
 
                 Debug.WriteLine($"🔍 QRCodePage: Đang tìm kiếm nhà hàng với ID: {qrCodeId}");
 
-                QRScannerView.IsDetecting = false;
-
                 var restaurant = await _qrCodeService.GetRestaurantFromIdAsync(qrCodeId);
 
                 if (restaurant != null)
                 {
+                    _hasNavigated = true; // đánh dấu đã chuyển trang
                     Debug.WriteLine($"✅ QRCodePage: Tìm thấy nhà hàng - {restaurant.Name}");
 
                     await Shell.Current.Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioPlaybackService));
                     return;
                 }
-                else
-                {
-                    Debug.WriteLine($"❌ QRCodePage: Không tìm thấy nhà hàng với ID: {qrCodeId}");
 
-                    await DisplayAlert(
-                        _localizationService.GetString("Error", language),
-                        $"ID: {qrCodeId}\n\n{_localizationService.GetString("RestaurantNotFound", language)}\n\n{_localizationService.GetString("ScanOtherQR", language)}",
-                        _localizationService.GetString("OK", language));
+                Debug.WriteLine($"❌ QRCodePage: Không tìm thấy nhà hàng với ID: {qrCodeId}");
 
-                    _isProcessing = false;
-                    _lastScannedResult = null;
-                    QRScannerView.IsDetecting = true;
-                }
+                await DisplayAlert(
+                    _localizationService.GetString("Error", language),
+                    $"ID: {qrCodeId}\n\n{_localizationService.GetString("RestaurantNotFound", language)}\n\n{_localizationService.GetString("ScanOtherQR", language)}",
+                    _localizationService.GetString("OK", language));
+
+                _isProcessing = false;
+                _lastScannedResult = null;
+                QRScannerView.IsDetecting = true;
             }
             catch (Exception ex)
             {
