@@ -230,7 +230,7 @@
 
                                             <!-- Highlights -->
                                             <Label Grid.Row="2" Grid.Column="1"
-                                                   Text="{Binding Highlights}"
+                                                   Text="{Binding DisplayHighlights}"
                                                    FontSize="11"
                                                    TextColor="#666666"
                                                    LineBreakMode="TailTruncation"

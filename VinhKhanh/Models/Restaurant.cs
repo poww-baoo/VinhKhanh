@@ -29,6 +29,8 @@
         public string TextRu { get; set; } = string.Empty;
         public string TextFr { get; set; } = string.Empty;
         public string Highlights { get; set; } = string.Empty;
+        public string DisplayAddress { get; set; } = string.Empty;
+        public string DisplayHighlights { get; set; } = string.Empty;
         public double Rating { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }

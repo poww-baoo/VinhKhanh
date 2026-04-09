@@ -165,7 +165,17 @@ public partial class ExplorePage : ContentPage
             Name = poi.Name,
             YearEstablished = poi.YearEstablished,
             History = poi.History,
+            HistoryEn = poi.HistoryEn,
+            HistoryJp = poi.HistoryJp,
+            HistoryZh = poi.HistoryZh,
+            HistoryRu = poi.HistoryRu,
+            HistoryFr = poi.HistoryFr,
             Address = poi.Address,
+            AdrEn = poi.AdrEn,
+            AdrJp = poi.AdrJp,
+            AdrZh = poi.AdrZh,
+            AdrRu = poi.AdrRu,
+            AdrFr = poi.AdrFr,
             TextVi = poi.TextVi,
             TextEn = poi.TextEn,
             TextZh = poi.TextZh,
@@ -173,6 +183,8 @@ public partial class ExplorePage : ContentPage
             TextRu = poi.TextRu,
             TextFr = poi.TextFr,
             Highlights = highlights,
+            DisplayAddress = poi.Address,
+            DisplayHighlights = highlights,
             Rating = poi.Rating,
             Latitude = poi.Lat,
             Longitude = poi.Lng,
@@ -182,8 +194,41 @@ public partial class ExplorePage : ContentPage
         };
     }
 
+    private static string BuildHighlightPreview(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        var value = text.Trim();
+        return value.Length > 120 ? value[..120] + "..." : value;
+    }
+
+    private void ApplyRestaurantLocalization()
+    {
+        var language = NormalizeLanguageCode(_localizationService.CurrentLanguage);
+
+        foreach (var restaurant in _allRestaurants)
+        {
+            var localizedAddress = restaurant.GetAddressByLanguage(language);
+            restaurant.DisplayAddress = string.IsNullOrWhiteSpace(localizedAddress)
+                ? restaurant.Address
+                : localizedAddress;
+
+            var localizedText = restaurant.GetTextByLanguage(language);
+            if (string.IsNullOrWhiteSpace(localizedText))
+            {
+                localizedText = restaurant.GetHistoryByLanguage(language);
+            }
+
+            restaurant.DisplayHighlights = BuildHighlightPreview(localizedText);
+        }
+    }
+
     private void OnLanguageChangedEvent(object? sender, EventArgs e)
     {
+        ApplyRestaurantLocalization();
         UpdateUI();
         _ = ApplyCategoryTranslationsAsync();
     }
@@ -279,6 +324,7 @@ public partial class ExplorePage : ContentPage
             }
         }
 
+        ApplyRestaurantLocalization();
         ApplyFilters();
     }
 
@@ -390,8 +436,8 @@ public partial class ExplorePage : ContentPage
         {
             id = r.Id,
             name = EscapeHtml(r.Name),
-            address = EscapeHtml(r.Address),
-            highlights = EscapeHtml(r.Highlights),
+            address = EscapeHtml(r.DisplayAddress),
+            highlights = EscapeHtml(r.DisplayHighlights),
             rating = r.Rating,
             latitude = r.Latitude,
             longitude = r.Longitude
