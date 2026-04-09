@@ -316,18 +316,13 @@ namespace VinhKhanh.Pages
                 {
                     Debug.WriteLine($"✅ QRCodePage: Tìm thấy nhà hàng - {restaurant.Name}");
 
-                    await Shell.Current.GoToAsync(
-                        $"restaurantdetail?id={restaurant.Id}",
-                        new Dictionary<string, object>
-                        {
-                            { "restaurant", restaurant },
-                            { "audioService", _audioPlaybackService }
-                        });
+                    await Shell.Current.Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioPlaybackService));
+                    return;
                 }
                 else
                 {
                     Debug.WriteLine($"❌ QRCodePage: Không tìm thấy nhà hàng với ID: {qrCodeId}");
-                    
+
                     await DisplayAlert(
                         _localizationService.GetString("Error", language),
                         $"ID: {qrCodeId}\n\n{_localizationService.GetString("RestaurantNotFound", language)}\n\n{_localizationService.GetString("ScanOtherQR", language)}",
@@ -401,13 +396,6 @@ namespace VinhKhanh.Pages
 
                     _isProcessing = false;
                     _lastScannedResult = null;
-                    QRScannerView.IsDetecting = true;
-                    return;
-                }
-
-                if (decodedValue == _lastScannedResult)
-                {
-                    _isProcessing = false;
                     QRScannerView.IsDetecting = true;
                     return;
                 }
