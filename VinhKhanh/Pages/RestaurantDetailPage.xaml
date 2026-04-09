@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:model="clr-namespace:VinhKhanh.Models"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
              x:Class="VinhKhanh.Pages.RestaurantDetailPage">
 
     <ScrollView>
@@ -125,6 +126,21 @@
                         <Button x:Name="StopButton" Text="⏹️" Clicked="OnStopClicked" Padding="12"/>
                     </HorizontalStackLayout>
                     <ProgressBar x:Name="PlaybackProgress" Progress="0" Margin="0,8,0,0"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame CornerRadius="12" Padding="12" BorderColor="#34495E">
+                <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                    <Label x:Name="QrTitleLabel" FontSize="16" FontAttributes="Bold" HorizontalTextAlignment="Center"/>
+                    <zxing:BarcodeGeneratorView x:Name="PoiQrCodeView"
+                                                WidthRequest="180"
+                                                HeightRequest="180"
+                                                HorizontalOptions="Center"
+                                                VerticalOptions="Center" />
+                    <Label x:Name="QrContentLabel"
+                           FontSize="11"
+                           TextColor="#7F8C8D"
+                           HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </Frame>
         </VerticalStackLayout>

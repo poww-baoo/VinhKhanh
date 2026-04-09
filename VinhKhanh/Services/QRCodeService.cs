@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using VinhKhanh.Models;
 
 namespace VinhKhanh.Services
@@ -48,14 +49,23 @@ namespace VinhKhanh.Services
                     return null;
                 }
 
-                Debug.WriteLine($"QRCodeService: Tìm kiếm nhà hàng với ID - {id}");
+                Debug.WriteLine($"QRCodeService: Tìm kiếm nhà hàng với ID gốc - {id}");
+
+                var normalizedId = ExtractPoiId(id);
+                if (string.IsNullOrWhiteSpace(normalizedId))
+                {
+                    Debug.WriteLine($"QRCodeService: Không trích xuất được PoiId từ QR - {id}");
+                    return null;
+                }
+
+                Debug.WriteLine($"QRCodeService: ID đã chuẩn hóa - {normalizedId}");
 
                 // Bước 2: Chuyển đổi ID từ string sang int
-                if (!int.TryParse(id, out var numericId))
+                if (!int.TryParse(normalizedId, out var numericId))
                 {
-                    Debug.WriteLine($"QRCodeService: ID không phải số - {id}");
+                    Debug.WriteLine($"QRCodeService: ID không phải số - {normalizedId}");
                     // Nếu ID không phải số, thử dữ liệu giả
-                    return GetMockRestaurantData(id);
+                    return GetMockRestaurantData(normalizedId);
                 }
 
                 // Bước 3: Cố gắng tìm từ cơ sở dữ liệu
@@ -77,7 +87,7 @@ namespace VinhKhanh.Services
 
                 // Bước 4: Trả về dữ liệu giả nếu không tìm thấy trong database
                 Debug.WriteLine($"QRCodeService: Database không có, kiểm tra dữ liệu giả");
-                var mockRestaurant = GetMockRestaurantData(id);
+                var mockRestaurant = GetMockRestaurantData(normalizedId);
 
                 if (mockRestaurant != null)
                 {
@@ -86,7 +96,7 @@ namespace VinhKhanh.Services
                 }
 
                 // Bước 5: Không tìm thấy
-                Debug.WriteLine($"QRCodeService: Không tìm thấy nhà hàng với ID {id}");
+                Debug.WriteLine($"QRCodeService: Không tìm thấy nhà hàng với ID {normalizedId}");
                 return null;
             }
             catch (Exception ex)
@@ -94,6 +104,40 @@ namespace VinhKhanh.Services
                 Debug.WriteLine($"QRCodeService.GetRestaurantFromIdAsync: Lỗi - {ex.Message}");
                 return null;
             }
+        }
+
+        private static string? ExtractPoiId(string rawValue)
+        {
+            if (string.IsNullOrWhiteSpace(rawValue))
+            {
+                return null;
+            }
+
+            var value = rawValue.Trim();
+
+            // 1) Dạng đơn giản: "123"
+            if (int.TryParse(value, out _))
+            {
+                return value;
+            }
+
+            // 2) Dạng prefix: "poi:123", "poi/123", "restaurant:123"
+            var prefixedMatch = Regex.Match(value, @"(?:^|[/:?&=#])(poi|restaurant)[:/=-]?(\d+)(?:$|[/?&#])", RegexOptions.IgnoreCase);
+            if (prefixedMatch.Success)
+            {
+                return prefixedMatch.Groups[2].Value;
+            }
+
+            // 3) Dạng query string/url: "...?id=123" hoặc "...?poiId=123"
+            var queryMatch = Regex.Match(value, @"(?:\?|&)(?:id|poiid|poi_id|restaurantid|restaurant_id)=(\d+)", RegexOptions.IgnoreCase);
+            if (queryMatch.Success)
+            {
+                return queryMatch.Groups[1].Value;
+            }
+
+            // 4) Fallback: lấy cụm số đầu tiên
+            var firstNumber = Regex.Match(value, @"\d+");
+            return firstNumber.Success ? firstNumber.Value : null;
         }
 
         /// <summary>
@@ -399,5 +443,11 @@ namespace VinhKhanh.Services
 
             return null;
         }
+
+        /// <summary>
+        /// Tạo nội dung QR code cho một Poi.
+        /// Mặc định dùng định dạng "poi:{id}" để dễ mở rộng về sau.
+        /// </summary>
+        public string BuildPoiQrPayload(int poiId) => $"poi:{poiId}";
     }
 }

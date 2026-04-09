@@ -1,8 +1,13 @@
 ﻿using System.Diagnostics;
+using SkiaSharp;
+using ZXing;
+using ZXing.Common;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
+using ZXing.SkiaSharp;
 using VinhKhanh.Models;
 using VinhKhanh.Services;
+using ZxingBarcodeFormat = ZXing.BarcodeFormat;
 
 namespace VinhKhanh.Pages
 {
@@ -35,6 +40,19 @@ namespace VinhKhanh.Pages
 
         /// <summary>Dịch vụ phát nhạc nền</summary>
         private readonly AudioPlaybackService _audioPlaybackService;
+
+        private static readonly BarcodeReader ImageBarcodeReader = new()
+        {
+            AutoRotate = true,
+            Options = new DecodingOptions
+            {
+                TryHarder = true,
+                PossibleFormats = new List<ZxingBarcodeFormat>
+                {
+                    ZxingBarcodeFormat.QR_CODE
+                }
+            }
+        };
 
         // ============ CONSTRUCTOR ============
         /// <summary>
@@ -346,6 +364,110 @@ namespace VinhKhanh.Pages
             };
 
             QRScannerView.CameraLocation = CameraLocation.Rear;
+        }
+
+        // ============ TÍNH NĂNG CHỌN ẢNH ============
+        private async void OnPickImageClicked(object sender, EventArgs e)
+        {
+            if (_isProcessing)
+            {
+                return;
+            }
+
+            var language = _localizationService.CurrentLanguage;
+
+            try
+            {
+                QRScannerView.IsDetecting = false;
+
+                var photo = await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions
+                {
+                    Title = language == "en" ? "Select a QR image" : "Chọn ảnh chứa mã QR"
+                });
+
+                if (photo is null)
+                {
+                    QRScannerView.IsDetecting = true;
+                    return;
+                }
+
+                var decodedValue = await DecodeQrFromPhotoAsync(photo);
+                if (string.IsNullOrWhiteSpace(decodedValue))
+                {
+                    await DisplayAlert(
+                        _localizationService.GetString("Error", language),
+                        language == "en" ? "No QR code detected in selected image." : "Không phát hiện mã QR trong ảnh đã chọn.",
+                        _localizationService.GetString("OK", language));
+
+                    _isProcessing = false;
+                    _lastScannedResult = null;
+                    QRScannerView.IsDetecting = true;
+                    return;
+                }
+
+                if (decodedValue == _lastScannedResult)
+                {
+                    _isProcessing = false;
+                    QRScannerView.IsDetecting = true;
+                    return;
+                }
+
+                _isProcessing = true;
+                _lastScannedResult = decodedValue;
+
+                Debug.WriteLine($"✅ QRCodePage: Đọc QR từ ảnh thành công - {decodedValue}");
+                await ProcessQRCodeAsync(decodedValue);
+            }
+            catch (FeatureNotSupportedException)
+            {
+                await DisplayAlert(
+                    _localizationService.GetString("Error", language),
+                    language == "en" ? "Photo picking is not supported on this device." : "Thiết bị không hỗ trợ chọn ảnh.",
+                    _localizationService.GetString("OK", language));
+
+                _isProcessing = false;
+                _lastScannedResult = null;
+                QRScannerView.IsDetecting = true;
+            }
+            catch (PermissionException)
+            {
+                await DisplayAlert(
+                    _localizationService.GetString("PermissionError", language),
+                    language == "en" ? "Photo access permission was denied." : "Quyền truy cập ảnh đã bị từ chối.",
+                    _localizationService.GetString("OK", language));
+
+                _isProcessing = false;
+                _lastScannedResult = null;
+                QRScannerView.IsDetecting = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ QRCodePage.OnPickImageClicked: Lỗi - {ex.Message}");
+
+                await DisplayAlert(
+                    _localizationService.GetString("Error", language),
+                    ex.Message,
+                    _localizationService.GetString("OK", language));
+
+                _isProcessing = false;
+                _lastScannedResult = null;
+                QRScannerView.IsDetecting = true;
+            }
+        }
+
+        private static async Task<string?> DecodeQrFromPhotoAsync(FileResult photo)
+        {
+            await using var stream = await photo.OpenReadAsync();
+            using var managedStream = new SKManagedStream(stream);
+            using var bitmap = SKBitmap.Decode(managedStream);
+
+            if (bitmap is null)
+            {
+                return null;
+            }
+
+            var result = ImageBarcodeReader.Decode(bitmap);
+            return result?.Text?.Trim();
         }
     }
 }

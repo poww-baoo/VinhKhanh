@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using VinhKhanh.Models;
 using VinhKhanh.Services;
+using ZXing.Net.Maui;
 
 namespace VinhKhanh.Pages
 {
@@ -14,6 +15,8 @@ namespace VinhKhanh.Pages
         private readonly LocalizationService _localizationService;
         private readonly ImageSyncService _imageSyncService;
         private readonly SQLiteDbContext _dbContext;
+        private readonly QRCodeService _qrCodeService;
+        private readonly string _poiQrPayload;
 
         private string _selectedAudioLanguage = "vi";
         private bool _isSaved = false;
@@ -31,6 +34,11 @@ namespace VinhKhanh.Pages
             _localizationService = LocalizationService.Instance;
             _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
             _dbContext = new SQLiteDbContext();
+            _qrCodeService = ResolveService<QRCodeService>() ?? new QRCodeService(_databaseService);
+
+            _poiQrPayload = int.TryParse(_restaurant.Id, out var poiId)
+                ? _qrCodeService.BuildPoiQrPayload(poiId)
+                : _restaurant.Id;
 
             LoadDisplayImage();
             InitializeAudioLanguage();
@@ -114,6 +122,11 @@ namespace VinhKhanh.Pages
             PlaybackControlTitleLabel.Text = _localizationService.GetString("PlaybackControls", language);
             PlaySignatureButton.Text = _localizationService.GetString("ListenStoryButton", language);
             MenuCollection.EmptyView = _localizationService.GetString("NoMenuData", language);
+
+            QrTitleLabel.Text = _localizationService.GetString("QRCode", language);
+            QrContentLabel.Text = _poiQrPayload;
+            PoiQrCodeView.Format = BarcodeFormat.QrCode;
+            PoiQrCodeView.Value = _poiQrPayload;
 
             ViOptionButton.Text = $"🇻🇳 {_localizationService.GetString("Vi", language)}";
             EnOptionButton.Text = $"🇬🇧 {_localizationService.GetString("En", language)}";
