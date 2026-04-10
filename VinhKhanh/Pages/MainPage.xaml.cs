@@ -14,7 +14,7 @@ namespace VinhKhanh.Pages
         private const string MapLibreCssUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
         private const string MapLibreJsUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
         private const double AutoPlayNearestDistanceMeters = 180;
-        private const int AutoPlayCooldownMinutes = 15;
+        private const int AutoPlayCooldownMinutes = 0;
 
         private readonly DatabaseService _databaseService;
         private readonly LocationService _locationService;
@@ -363,62 +363,55 @@ namespace VinhKhanh.Pages
                 if (_restaurants.Count == 0 || _audioService.IsPlaying)
                     return;
 
-                var nearest = _restaurants
+                var nearby = _restaurants
                     .Select(r => new
                     {
                         Restaurant = r,
                         Distance = GetDistanceInMeters(
-                            location.Latitude,
-                            location.Longitude,
-                            r.Latitude,
-                            r.Longitude)
+                            location.Latitude, location.Longitude,
+                            r.Latitude, r.Longitude)
                     })
+                    .Where(x => x.Distance <= Math.Max(x.Restaurant.GeofenceRadius + 40, AutoPlayNearestDistanceMeters))
                     .OrderBy(x => x.Distance)
                     .FirstOrDefault();
 
-                if (nearest is null)
-                    return;
-
-                // Chỉ phát khi đủ gần quán gần nhất
-                var triggerDistance = Math.Max(nearest.Restaurant.GeofenceRadius + 40, AutoPlayNearestDistanceMeters);
-                if (nearest.Distance > triggerDistance)
+                if (nearby is null)
                     return;
 
                 var now = DateTime.Now;
                 var stillInCooldown =
-                    _lastAutoPlayedRestaurantId == nearest.Restaurant.Id &&
+                    _lastAutoPlayedRestaurantId == nearby.Restaurant.Id &&
                     (now - _lastAutoPlayedAt).TotalMinutes < AutoPlayCooldownMinutes;
 
                 if (stillInCooldown)
                     return;
 
-                _lastAutoPlayedRestaurantId = nearest.Restaurant.Id;
+                _lastAutoPlayedRestaurantId = nearby.Restaurant.Id;
                 _lastAutoPlayedAt = now;
 
                 var language = _localizationService.CurrentLanguage;
                 var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
 
-                // 🔥 TẠO CÂU CHÀO NGẮN GỌN DÀNH CHO AUTO PLAY
                 string ttsText = language switch
                 {
-                    "en" => $"You have arrived at {nearest.Restaurant.Name}",
-                    "zh" => $"您已到达 {nearest.Restaurant.Name}",
-                    "ja" => $"{nearest.Restaurant.Name} に到着しました",
-                    "ru" => $"Вы прибыли в {nearest.Restaurant.Name}",
-                    "fr" => $"Vous êtes arrivé à {nearest.Restaurant.Name}",
-                    _ => $"Bạn đã đến {nearest.Restaurant.Name} rồi"
+                    "en" => $"You have arrived at {nearby.Restaurant.Name}",
+                    "zh" => $"您已到达 {nearby.Restaurant.Name}",
+                    "ja" => $"{nearby.Restaurant.Name} に到着しました",
+                    "ru" => $"Вы прибыли в {nearby.Restaurant.Name}",
+                    "fr" => $"Vous êtes arrivé à {nearby.Restaurant.Name}",
+                    _ => $"Bạn đã đến {nearby.Restaurant.Name} rồi"
                 };
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    _trackingPage.UpdateStatus($"{playingText}: {nearest.Restaurant.Name}");
+                    _trackingPage.UpdateStatus($"{playingText}: {nearby.Restaurant.Name}");
                 });
 
                 await _audioService.PlayTextAsync(
                     ttsText,
                     language,
-                    nearest.Restaurant.Name,
-                    nearest.Restaurant.Id);
+                    nearby.Restaurant.Name,
+                    nearby.Restaurant.Id);
             }
             catch (Exception ex)
             {
