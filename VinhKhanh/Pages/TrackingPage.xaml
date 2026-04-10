@@ -4,66 +4,68 @@
              x:Class="VinhKhanh.Pages.TrackingPage"
              Title="Theo Dõi">
 
-    <VerticalStackLayout Padding="16" Spacing="16" BackgroundColor="#F5F5F5">
-        
-        <!-- Nút bật/tắt theo dõi -->
-        <Button x:Name="TrackingToggleButton"
-                Text="▶️ Bật Theo Dõi"
-                Clicked="OnTrackingToggleClicked"
-                BackgroundColor="#FF6B35"
-                TextColor="White"
-                Padding="16,12"
-                CornerRadius="10"
-                FontSize="14"
-                FontAttributes="Bold"
-                BorderWidth="0"/>
+    <ScrollView>
+        <VerticalStackLayout Padding="16,16,16,80" Spacing="16" BackgroundColor="#F5F5F5">
 
-        <!-- Hiển thị vị trí hiện tại -->
-        <Frame CornerRadius="12" Padding="16" BorderColor="#3498DB" HasShadow="False">
-            <VerticalStackLayout Spacing="8">
-                <Label x:Name="CurrentLocationTitleLabel" Text="📍 Vị Trí Hiện Tại" FontSize="16" FontAttributes="Bold"/>
-                <Label x:Name="LocationLabel" FontSize="12" TextColor="#666666" Text="Chờ GPS..."/>
-            </VerticalStackLayout>
-        </Frame>
+            <!-- Nút bật/tắt theo dõi -->
+            <Button x:Name="TrackingToggleButton"
+                    Text="▶️ Bật Theo Dõi"
+                    Clicked="OnTrackingToggleClicked"
+                    BackgroundColor="#FF6B35"
+                    TextColor="White"
+                    Padding="16,12"
+                    CornerRadius="10"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    BorderWidth="0"/>
 
-        <!-- Hiển thị trạng thái -->
-        <Frame CornerRadius="12" Padding="16" BorderColor="#E74C3C" HasShadow="False">
-            <VerticalStackLayout Spacing="8">
-                <Label x:Name="StatusTitleLabel" Text="🔊 Trạng Thái" FontSize="16" FontAttributes="Bold"/>
-                <Label x:Name="StatusLabel" FontSize="12" TextColor="#666666" Text="Sẵn sàng"/>
-            </VerticalStackLayout>
-        </Frame>
+            <!-- Hiển thị vị trí hiện tại -->
+            <Frame CornerRadius="12" Padding="16" BorderColor="#3498DB" HasShadow="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="CurrentLocationTitleLabel" Text="📍 Vị Trí Hiện Tại" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="LocationLabel" FontSize="12" TextColor="#666666" Text="Chờ GPS..."/>
+                </VerticalStackLayout>
+            </Frame>
 
-        <!-- Danh sách quán ăn gần đây -->
-        <Frame CornerRadius="12" Padding="16" BorderColor="#27AE60" HasShadow="False">
-            <VerticalStackLayout Spacing="8">
-                <Label x:Name="NearbyRestaurantsTitleLabel" Text="🍽️ Quán Ăn Gần Bạn" FontSize="16" FontAttributes="Bold"/>
-                <CollectionView x:Name="RestaurantsCollection"
-                                HeightRequest="300"
-                                SelectionMode="Single"
-                                SelectionChanged="OnNearbyRestaurantSelectionChanged">
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Frame CornerRadius="8" Padding="12" BorderColor="#E0E0E0" HasShadow="False">
-                                <Frame.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnNearbyRestaurantTapped"
-                                                          CommandParameter="{Binding .}" />
-                                </Frame.GestureRecognizers>
+            <!-- Hiển thị trạng thái -->
+            <Frame CornerRadius="12" Padding="16" BorderColor="#E74C3C" HasShadow="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="StatusTitleLabel" Text="🔊 Trạng Thái" FontSize="16" FontAttributes="Bold"/>
+                    <Label x:Name="StatusLabel" FontSize="12" TextColor="#666666" Text="Sẵn sàng"/>
+                </VerticalStackLayout>
+            </Frame>
 
-                                <VerticalStackLayout Spacing="4">
-                                    <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold"/>
-                                    <Label Text="{Binding Highlights}" FontSize="11" TextColor="#666666"/>
-                                    <Label Text="{Binding Rating, StringFormat='⭐ {0:F1}'}" FontSize="11" TextColor="#F39C12"/>
-                                </VerticalStackLayout>
-                            </Frame>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-            </VerticalStackLayout>
-        </Frame>
-    </VerticalStackLayout>
+            <!-- Danh sách quán ăn gần đây -->
+            <Frame CornerRadius="12" Padding="16" BorderColor="#27AE60" HasShadow="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="NearbyRestaurantsTitleLabel" Text="🍽️ Quán Ăn Gần Bạn" FontSize="16" FontAttributes="Bold"/>
+                    <CollectionView x:Name="RestaurantsCollection"
+                                    HeightRequest="300"
+                                    SelectionMode="Single"
+                                    SelectionChanged="OnNearbyRestaurantSelectionChanged">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame CornerRadius="8" Padding="12" BorderColor="#E0E0E0" HasShadow="False">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnNearbyRestaurantTapped"
+                                                              CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
+
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold"/>
+                                        <Label Text="{Binding Highlights}" FontSize="11" TextColor="#666666"/>
+                                        <Label Text="{Binding Rating, StringFormat='⭐ {0:F1}'}" FontSize="11" TextColor="#F39C12"/>
+                                    </VerticalStackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+        </VerticalStackLayout>
+    </ScrollView>
 
 </ContentPage>

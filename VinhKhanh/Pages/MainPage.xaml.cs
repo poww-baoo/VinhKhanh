@@ -13,6 +13,8 @@ namespace VinhKhanh.Pages
         private const string TrackAsiaJsUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.js";
         private const string MapLibreCssUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
         private const string MapLibreJsUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
+        private const double AutoPlayNearestDistanceMeters = 180;
+        private const int AutoPlayCooldownMinutes = 15;
 
         private readonly DatabaseService _databaseService;
         private readonly LocationService _locationService;
@@ -37,6 +39,8 @@ namespace VinhKhanh.Pages
 
         private bool _isDataLoaded;
         private bool _isTrackingStarted = false;
+        private string? _lastAutoPlayedRestaurantId;
+        private DateTime _lastAutoPlayedAt = DateTime.MinValue;
 
         public MainPage()
         {
@@ -284,12 +288,25 @@ namespace VinhKhanh.Pages
             {
                 _trackingPage.UpdateLocation(location);
             });
+
+            _ = TryAutoPlayNearestRestaurantAsync(location);
         }
 
         private async void OnEnteredGeofence(object? sender, Restaurant restaurant)
         {
             var language = _localizationService.CurrentLanguage;
-            var ttsText = restaurant.GetTextByLanguage(language);
+
+            // 🔥 TẠO CÂU CHÀO NGẮN GỌN THEO NGÔN NGỮ
+            string ttsText = language switch
+            {
+                "en" => $"You have arrived at {restaurant.Name}",
+                "zh" => $"您已到达 {restaurant.Name}",
+                "ja" => $"{restaurant.Name} に到着しました",
+                "ru" => $"Вы прибыли в {restaurant.Name}",
+                "fr" => $"Vous êtes arrivé à {restaurant.Name}",
+                _ => $"Bạn đã đến {restaurant.Name} rồi"
+            };
+
             var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
 
             await _audioService.PlayTextAsync(
@@ -337,6 +354,90 @@ namespace VinhKhanh.Pages
             ((Label)TrackingTab.Children[1]).Text = _localizationService.GetString("Tracking", language);
             ((Label)QRCodeTab.Children[1]).Text = _localizationService.GetString("QRCode", language);
             ((Label)SettingsTab.Children[1]).Text = _localizationService.GetString("Settings", language);
+        }
+
+        private async Task TryAutoPlayNearestRestaurantAsync(Location location)
+        {
+            try
+            {
+                if (_restaurants.Count == 0 || _audioService.IsPlaying)
+                    return;
+
+                var nearest = _restaurants
+                    .Select(r => new
+                    {
+                        Restaurant = r,
+                        Distance = GetDistanceInMeters(
+                            location.Latitude,
+                            location.Longitude,
+                            r.Latitude,
+                            r.Longitude)
+                    })
+                    .OrderBy(x => x.Distance)
+                    .FirstOrDefault();
+
+                if (nearest is null)
+                    return;
+
+                // Chỉ phát khi đủ gần quán gần nhất
+                var triggerDistance = Math.Max(nearest.Restaurant.GeofenceRadius + 40, AutoPlayNearestDistanceMeters);
+                if (nearest.Distance > triggerDistance)
+                    return;
+
+                var now = DateTime.Now;
+                var stillInCooldown =
+                    _lastAutoPlayedRestaurantId == nearest.Restaurant.Id &&
+                    (now - _lastAutoPlayedAt).TotalMinutes < AutoPlayCooldownMinutes;
+
+                if (stillInCooldown)
+                    return;
+
+                _lastAutoPlayedRestaurantId = nearest.Restaurant.Id;
+                _lastAutoPlayedAt = now;
+
+                var language = _localizationService.CurrentLanguage;
+                var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
+
+                // 🔥 TẠO CÂU CHÀO NGẮN GỌN DÀNH CHO AUTO PLAY
+                string ttsText = language switch
+                {
+                    "en" => $"You have arrived at {nearest.Restaurant.Name}",
+                    "zh" => $"您已到达 {nearest.Restaurant.Name}",
+                    "ja" => $"{nearest.Restaurant.Name} に到着しました",
+                    "ru" => $"Вы прибыли в {nearest.Restaurant.Name}",
+                    "fr" => $"Vous êtes arrivé à {nearest.Restaurant.Name}",
+                    _ => $"Bạn đã đến {nearest.Restaurant.Name} rồi"
+                };
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    _trackingPage.UpdateStatus($"{playingText}: {nearest.Restaurant.Name}");
+                });
+
+                await _audioService.PlayTextAsync(
+                    ttsText,
+                    language,
+                    nearest.Restaurant.Name,
+                    nearest.Restaurant.Id);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AutoPlayNearest] {ex.Message}");
+            }
+        }
+
+        private static double GetDistanceInMeters(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double earthRadius = 6371000;
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLon = (lon2 - lon1) * Math.PI / 180;
+
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return earthRadius * c;
         }
     }
 }

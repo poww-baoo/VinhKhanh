@@ -15,7 +15,7 @@ public partial class TrackingPage : ContentPage
 	private string? _lastApproachingRestaurantId;
 	private DateTime _lastApproachingStatusAt = DateTime.MinValue;
 
-	private const double NearbyRadiusMeters = 3000000;
+	private const double NearbyRadiusMeters = 300000;
 	private const int MaxNearbyRestaurants = 3;
 	private const int ApproachingCooldownSeconds = 5;
 	private const double ApproachingExtraMeters = 120;
