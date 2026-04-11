@@ -11,7 +11,8 @@ public class LocalizationConverter : IValueConverter
         if (parameter is not string key)
             return string.Empty;
 
-        return LocalizationService.Instance.GetString(key, LocalizationService.Instance.CurrentLanguage);
+        var language = value as string ?? LocalizationService.Instance.CurrentLanguage;
+        return LocalizationService.Instance.GetString(key, language);
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
