@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Networking;
 using VinhKhanh.Models;
 using VinhKhanh.Services;
 
@@ -19,6 +20,7 @@ public partial class ExplorePage : ContentPage
     private const string TrackAsiaJsUrl = "https://maps.track-asia.com/v1.0.0/trackasia-gl.js";
     private const string MapLibreCssUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
     private const string MapLibreJsUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
+    private const string MapHtmlCacheFileName = "explore-map-cache.html";
 
     private readonly AudioPlaybackService _audioService;
     private readonly LocalizationService _localizationService;
@@ -40,6 +42,7 @@ public partial class ExplorePage : ContentPage
 
     private Location? _currentLocation;
     private string _currentLocationDisplay = string.Empty;
+    private readonly string _mapHtmlCachePath;
 
     public ExplorePage()
     {
@@ -51,6 +54,7 @@ public partial class ExplorePage : ContentPage
 
         _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
         _firebaseSyncService = ResolveService<FirebaseSyncService>() ?? new FirebaseSyncService(_databaseService, _imageSyncService);
+        _mapHtmlCachePath = Path.Combine(FileSystem.CacheDirectory, MapHtmlCacheFileName);
 
         _localizationService.LanguageChanged += OnLanguageChangedEvent;
         UpdateUI();
@@ -61,7 +65,15 @@ public partial class ExplorePage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        Connectivity.Current.ConnectivityChanged -= OnConnectivityChanged;
+        Connectivity.Current.ConnectivityChanged += OnConnectivityChanged;
         _ = LoadCurrentLocationAsync();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        Connectivity.Current.ConnectivityChanged -= OnConnectivityChanged;
     }
 
     private async Task LoadCurrentLocationAsync()
@@ -393,9 +405,57 @@ public partial class ExplorePage : ContentPage
 
     private void RenderTrackAsiaMap()
     {
-        var html = BuildMapHtml(_filteredRestaurants);
+        var hasInternet = Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
+
+        string html;
+        if (hasInternet)
+        {
+            html = BuildMapHtml(_filteredRestaurants);
+            SaveMapHtmlToCache(html);
+        }
+        else
+        {
+            html = LoadCachedMapHtml() ?? BuildOfflineMapHtml(_filteredRestaurants);
+        }
+
         SetMapHtml("TrackAsiaMapWebView", html);
         SetMapHtml("TrackAsiaMapFullScreenWebView", html);
+    }
+
+    private void OnConnectivityChanged(object? sender, ConnectivityChangedEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(RenderTrackAsiaMap);
+    }
+
+    private void SaveMapHtmlToCache(string html)
+    {
+        try
+        {
+            File.WriteAllText(_mapHtmlCachePath, html);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Explore Map Cache Save] {ex.Message}");
+        }
+    }
+
+    private string? LoadCachedMapHtml()
+    {
+        try
+        {
+            if (!File.Exists(_mapHtmlCachePath))
+            {
+                return null;
+            }
+
+            var html = File.ReadAllText(_mapHtmlCachePath);
+            return string.IsNullOrWhiteSpace(html) ? null : html;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Explore Map Cache Load] {ex.Message}");
+            return null;
+        }
     }
 
     private void SetMapHtml(string webViewName, string html)
@@ -549,6 +609,60 @@ public partial class ExplorePage : ContentPage
             .Replace("__USER_LNG__", userLng?.ToString(CultureInfo.InvariantCulture) ?? "null");
     }
 
+    private string BuildOfflineMapHtml(IReadOnlyList<Restaurant> restaurants)
+    {
+        var language = _localizationService.CurrentLanguage;
+        var detailsText = _localizationService.GetString("ViewDetails", language);
+        var offlineModeText = GetOfflineMapModeText(language);
+
+        var sb = new StringBuilder();
+        sb.Append("<!DOCTYPE html><html><head><meta charset='utf-8' />");
+        sb.Append("<meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=no' />");
+        sb.Append("<style>");
+        sb.Append("html,body{margin:0;padding:0;font-family:sans-serif;background:#fff;} ");
+        sb.Append("#banner{background:#FFF4E5;color:#A15C07;font-size:12px;padding:8px 10px;border-bottom:1px solid #FFD8A8;} ");
+        sb.Append("#list{padding:10px;} .item{margin-bottom:10px;padding:10px;border:1px solid #E5E5E5;border-radius:10px;} ");
+        sb.Append(".title{font-weight:700;color:#1F1F1F;} .sub{margin:4px 0 0;color:#666;font-size:12px;} ");
+        sb.Append(".link{display:inline-block;margin-top:8px;color:#FF6B35;text-decoration:none;font-weight:700;}");
+        sb.Append("</style></head><body>");
+        sb.Append($"<div id='banner'>{EscapeHtml(offlineModeText)}</div>");
+        sb.Append("<div id='list'>");
+
+        if (restaurants.Count == 0)
+        {
+            sb.Append("<div class='item'><div class='sub'>No data</div></div>");
+        }
+        else
+        {
+            foreach (var r in restaurants)
+            {
+                var detailUrl = $"app://poi/{Uri.EscapeDataString(r.Id ?? string.Empty)}";
+                sb.Append("<div class='item'>");
+                sb.Append($"<div class='title'>{EscapeHtml(r.Name)}</div>");
+                sb.Append($"<p class='sub'>⭐ {r.Rating:F1}</p>");
+                sb.Append($"<p class='sub'>📍 {EscapeHtml(r.DisplayAddress)}</p>");
+                sb.Append($"<a class='link' href='{detailUrl}'>{EscapeHtml(detailsText)}</a>");
+                sb.Append("</div>");
+            }
+        }
+
+        sb.Append("</div></body></html>");
+        return sb.ToString();
+    }
+
+    private static string GetOfflineMapModeText(string language)
+    {
+        return NormalizeLanguageCode(language) switch
+        {
+            "en" => "Offline mode: displaying cached/simple map data.",
+            "zh" => "离线模式：显示缓存/简化地图数据。",
+            "ja" => "オフラインモード：キャッシュ/簡易マップを表示しています。",
+            "ru" => "Оффлайн-режим: отображаются кэшированные/упрощенные данные карты.",
+            "fr" => "Mode hors ligne : affichage des données cartographiques en cache/simplifiées.",
+            _ => "Chế độ offline: đang hiển thị dữ liệu bản đồ cache/đơn giản."
+        };
+    }
+
     private async void OnPlayAudioClicked(object sender, EventArgs e)
     {
         if (sender is not Button { CommandParameter: Restaurant restaurant })
@@ -593,7 +707,9 @@ public partial class ExplorePage : ContentPage
         var encodedId = e.Url.Replace("app://poi/", string.Empty, StringComparison.OrdinalIgnoreCase);
         var poiId = Uri.UnescapeDataString(encodedId);
 
-        var restaurant = _allRestaurants.FirstOrDefault(r => r.Id == poiId);
+        var restaurant = _allRestaurants.FirstOrDefault(r => r.Id == poiId)
+            ?? _filteredRestaurants.FirstOrDefault(r => r.Id == poiId);
+
         if (restaurant is null)
         {
             return;
