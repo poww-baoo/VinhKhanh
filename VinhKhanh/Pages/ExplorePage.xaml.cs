@@ -27,7 +27,6 @@ public partial class ExplorePage : ContentPage
     private readonly DatabaseService _databaseService;
     private readonly FirebaseSyncService _firebaseSyncService;
     private readonly ImageSyncService _imageSyncService;
-    private readonly TranslationService _translationService;
 
     private readonly List<Restaurant> _allRestaurants = new();
     private readonly List<Restaurant> _filteredRestaurants = new();
@@ -37,12 +36,57 @@ public partial class ExplorePage : ContentPage
     private string _searchKeyword = string.Empty;
     private CancellationTokenSource? _searchDebounceCts;
     private readonly Dictionary<int, string> _sourceCategoryNames = new();
-    private readonly Dictionary<string, Dictionary<int, string>> _categoryNameCache = new(StringComparer.OrdinalIgnoreCase);
-    private CancellationTokenSource? _categoryTranslateCts;
 
     private Location? _currentLocation;
     private string _currentLocationDisplay = string.Empty;
     private readonly string _mapHtmlCachePath;
+
+    // Local category dictionary (không gọi API, không delay)
+    private static readonly Dictionary<string, Dictionary<string, string>> CategoryTranslations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["en"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [NormalizeCategoryKey("Tất cả")] = "All",
+            [NormalizeCategoryKey("Món nước")] = "Soup/Noodle",
+            [NormalizeCategoryKey("Món khô")] = "Dry dishes",
+            [NormalizeCategoryKey("Ăn vặt")] = "Snacks",
+            [NormalizeCategoryKey("Ăn Vặt - Nước")] = "Snacks & Drinks",
+            [NormalizeCategoryKey("Đồ uống")] = "Drinks",
+            [NormalizeCategoryKey("Tráng miệng")] = "Desserts",
+        },
+        ["zh"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [NormalizeCategoryKey("Tất cả")] = "全部",
+            [NormalizeCategoryKey("Ăn Vặt - Nước")] = "小吃与饮品",
+            [NormalizeCategoryKey("Lẩu - Nướng")] = "火锅与烧烤",
+            [NormalizeCategoryKey("Ốc - Hải sản")] = "螺类与海鲜",
+            [NormalizeCategoryKey("Tráng miệng")] = "甜点",
+        },
+        ["ja"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [NormalizeCategoryKey("Tất cả")] = "すべて",
+            [NormalizeCategoryKey("Ăn Vặt - Nước")] = "軽食・ドリンク",
+            [NormalizeCategoryKey("Lẩu - Nướng")] = "鍋・焼き物",
+            [NormalizeCategoryKey("Ốc - Hải sản")] = "巻貝・シーフード",
+            [NormalizeCategoryKey("Tráng miệng")] = "デザート",
+        },
+        ["ru"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [NormalizeCategoryKey("Tất cả")] = "Все",
+            [NormalizeCategoryKey("Ăn Vặt - Nước")] = "Закуски и напитки",
+            [NormalizeCategoryKey("Lẩu - Nướng")] = "Хотпот и гриль",
+            [NormalizeCategoryKey("Ốc - Hải sản")] = "Улитки и морепродукты",
+            [NormalizeCategoryKey("Tráng miệng")] = "Десерты",
+        },
+        ["fr"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [NormalizeCategoryKey("Tất cả")] = "Tous",
+            [NormalizeCategoryKey("Ăn Vặt - Nước")] = "Snacks et boissons",
+            [NormalizeCategoryKey("Lẩu - Nướng")] = "Fondue et grillades",
+            [NormalizeCategoryKey("Ốc - Hải sản")] = "Escargots et fruits de mer",
+            [NormalizeCategoryKey("Tráng miệng")] = "Desserts",
+        }
+    };
 
     public ExplorePage()
     {
@@ -50,7 +94,6 @@ public partial class ExplorePage : ContentPage
         _audioService = new AudioPlaybackService();
         _localizationService = LocalizationService.Instance;
         _databaseService = ResolveService<DatabaseService>() ?? new DatabaseService();
-        _translationService = new TranslationService(_databaseService);
 
         _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
         _firebaseSyncService = ResolveService<FirebaseSyncService>() ?? new FirebaseSyncService(_databaseService, _imageSyncService);
@@ -62,18 +105,103 @@ public partial class ExplorePage : ContentPage
         _ = LoadCurrentLocationAsync();
     }
 
-    protected override void OnAppearing()
+    private void OnLanguageChangedEvent(object? sender, EventArgs e)
     {
-        base.OnAppearing();
-        Connectivity.Current.ConnectivityChanged -= OnConnectivityChanged;
-        Connectivity.Current.ConnectivityChanged += OnConnectivityChanged;
-        _ = LoadCurrentLocationAsync();
+        ApplyRestaurantLocalization();
+        ApplyCategoryLocalization();
+        UpdateUI();
     }
 
-    protected override void OnDisappearing()
+    public void SetCategories(List<Category> categories)
     {
-        base.OnDisappearing();
-        Connectivity.Current.ConnectivityChanged -= OnConnectivityChanged;
+        _categories.Clear();
+
+        _categories.Add(new Category
+        {
+            Id = AllCategoryId,
+            Name = AllCategoryDefaultName,
+            IconText = "🍽️",
+            SortOrder = int.MinValue
+        });
+
+        if (categories is { Count: > 0 })
+        {
+            _categories.AddRange(categories.OrderBy(c => c.SortOrder));
+        }
+
+        _sourceCategoryNames.Clear();
+        foreach (var category in _categories)
+        {
+            _sourceCategoryNames[category.Id] = category.Name;
+        }
+
+        _selectedCategoryId = AllCategoryId;
+        UpdateCategorySelectionState();
+
+        ApplyCategoryLocalization();
+        RefreshCategoryItemsSource();
+        ApplyFilters();
+    }
+
+    private static string NormalizeLanguageCode(string? language)
+    {
+        var normalized = (language ?? BaseCategoryLanguage).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "jp" => "ja",
+            _ => normalized
+        };
+    }
+
+    private string GetLocalizedCategoryName(string sourceName, string language)
+    {
+        var normalizedLang = NormalizeLanguageCode(language);
+        if (normalizedLang == BaseCategoryLanguage)
+        {
+            return sourceName;
+        }
+
+        var normalizedKey = NormalizeCategoryKey(sourceName);
+
+        if (CategoryTranslations.TryGetValue(normalizedLang, out var map) &&
+            map.TryGetValue(normalizedKey, out var translated) &&
+            !string.IsNullOrWhiteSpace(translated))
+        {
+            return translated;
+        }
+
+        return sourceName;
+    }
+
+    private void ApplyCategoryLocalization()
+    {
+        if (_categories.Count == 0 || _sourceCategoryNames.Count == 0)
+        {
+            return;
+        }
+
+        var language = NormalizeLanguageCode(_localizationService.CurrentLanguage);
+
+        foreach (var category in _categories)
+        {
+            if (!_sourceCategoryNames.TryGetValue(category.Id, out var sourceName))
+            {
+                sourceName = category.Name;
+            }
+
+            category.Name = GetLocalizedCategoryName(sourceName, language);
+        }
+
+        foreach (var restaurant in _allRestaurants)
+        {
+            if (_sourceCategoryNames.TryGetValue(restaurant.CategoryId, out var sourceName))
+            {
+                restaurant.CategoryName = GetLocalizedCategoryName(sourceName, language);
+            }
+        }
+
+        RefreshCategoryItemsSource();
+        ApplyFilters();
     }
 
     private async Task LoadCurrentLocationAsync()
@@ -239,13 +367,6 @@ public partial class ExplorePage : ContentPage
         }
     }
 
-    private void OnLanguageChangedEvent(object? sender, EventArgs e)
-    {
-        ApplyRestaurantLocalization();
-        UpdateUI();
-        _ = ApplyCategoryTranslationsAsync();
-    }
-
     private void UpdateUI()
     {
         var language = _localizationService.CurrentLanguage;
@@ -293,38 +414,6 @@ public partial class ExplorePage : ContentPage
         });
     }
 
-    public void SetCategories(List<Category> categories)
-    {
-        _categories.Clear();
-
-        _categories.Add(new Category
-        {
-            Id = AllCategoryId,
-            Name = AllCategoryDefaultName,
-            IconText = "🍽️",
-            SortOrder = int.MinValue
-        });
-
-        if (categories is { Count: > 0 })
-        {
-            _categories.AddRange(categories.OrderBy(c => c.SortOrder));
-        }
-
-        _sourceCategoryNames.Clear();
-        foreach (var category in _categories)
-        {
-            _sourceCategoryNames[category.Id] = category.Name;
-        }
-
-        _selectedCategoryId = AllCategoryId;
-        UpdateCategorySelectionState();
-
-        RefreshCategoryItemsSource();
-        ApplyFilters();
-
-        _ = ApplyCategoryTranslationsAsync();
-    }
-
     public void SetRestaurants(List<Restaurant> restaurants)
     {
         _allRestaurants.Clear();
@@ -338,6 +427,7 @@ public partial class ExplorePage : ContentPage
         }
 
         ApplyRestaurantLocalization();
+        ApplyCategoryLocalization(); // thêm dòng này
         ApplyFilters();
     }
 
@@ -838,96 +928,29 @@ public partial class ExplorePage : ContentPage
         RestaurantsCollection.ItemsSource = _filteredRestaurants;
     }
 
-    private static string NormalizeLanguageCode(string? language)
+    private static string NormalizeCategoryKey(string? value)
     {
-        var normalized = (language ?? BaseCategoryLanguage).Trim().ToLowerInvariant();
-        return normalized switch
+        if (string.IsNullOrWhiteSpace(value))
         {
-            "jp" => "ja",
-            _ => normalized
-        };
-    }
-
-    private async Task<string> GetTranslatedCategoryNameAsync(int categoryId, string sourceName, string language)
-    {
-        if (string.Equals(language, BaseCategoryLanguage, StringComparison.OrdinalIgnoreCase))
-        {
-            return sourceName;
+            return string.Empty;
         }
 
-        if (_categoryNameCache.TryGetValue(language, out var byId) &&
-            byId.TryGetValue(categoryId, out var cached))
+        var normalized = value
+            .Trim()
+            .Replace('\t', ' ')
+            .Replace("–", "-")
+            .Replace("—", "-")
+            .Replace("/", "-")
+            .Replace(" - ", "-")
+            .Replace("- ", "-")
+            .Replace(" -", "-")
+            .ToLowerInvariant();
+
+        while (normalized.Contains("  ", StringComparison.Ordinal))
         {
-            return cached;
+            normalized = normalized.Replace("  ", " ");
         }
 
-        var translated = await _translationService.TranslateAsync(sourceName, BaseCategoryLanguage, language) ?? sourceName;
-        if (string.IsNullOrWhiteSpace(translated))
-        {
-            translated = sourceName;
-        }
-
-        byId ??= new Dictionary<int, string>();
-        byId[categoryId] = translated;
-        _categoryNameCache[language] = byId;
-
-        return translated;
-    }
-
-    private async Task ApplyCategoryTranslationsAsync()
-    {
-        if (_categories.Count == 0 || _sourceCategoryNames.Count == 0)
-        {
-            return;
-        }
-
-        var language = NormalizeLanguageCode(_localizationService.CurrentLanguage);
-
-        _categoryTranslateCts?.Cancel();
-        var cts = new CancellationTokenSource();
-        _categoryTranslateCts = cts;
-
-        try
-        {
-            var translatedById = new Dictionary<int, string>(_categories.Count);
-
-            foreach (var category in _categories)
-            {
-                cts.Token.ThrowIfCancellationRequested();
-
-                if (!_sourceCategoryNames.TryGetValue(category.Id, out var sourceName))
-                {
-                    sourceName = category.Name;
-                }
-
-                translatedById[category.Id] = await GetTranslatedCategoryNameAsync(category.Id, sourceName, language);
-            }
-
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
-                foreach (var category in _categories)
-                {
-                    if (translatedById.TryGetValue(category.Id, out var translated))
-                    {
-                        category.Name = translated;
-                    }
-                }
-
-                foreach (var restaurant in _allRestaurants)
-                {
-                    if (translatedById.TryGetValue(restaurant.CategoryId, out var translated))
-                    {
-                        restaurant.CategoryName = translated;
-                    }
-                }
-
-                RefreshCategoryItemsSource();
-                ApplyFilters();
-            });
-        }
-        catch (OperationCanceledException)
-        {
-            // ignore
-        }
+        return normalized;
     }
 }
