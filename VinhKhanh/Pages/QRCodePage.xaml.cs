@@ -106,31 +106,32 @@ namespace VinhKhanh.Pages
             {
                 Debug.WriteLine("QRCodePage.OnAppearing: Trang đang xuất hiện...");
 
-                _isProcessing = false;
-                _hasNavigated = false; // reset mỗi lần quay lại trang scan
-                _lastScannedResult = null;
+                ResetScanState();
 
                 var hasPermission = await RequestCameraPermissionAsync();
                 if (!hasPermission)
                 {
-                    QRScannerView.IsDetecting = false;
+                    StopScanner();
                     return;
                 }
 
                 // máy yếu cần thêm thời gian init camera
                 await Task.Delay(700);
 
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    ConfigureScanner();
-                    QRScannerView.IsDetecting = true;
-                    Debug.WriteLine("QRCodePage: Camera được bật + scanner configured");
-                });
+                await StartScannerAsync();
+                Debug.WriteLine("QRCodePage: Camera được bật + scanner configured");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"QRCodePage.OnAppearing: Lỗi - {ex.Message}");
             }
+        }
+
+        protected override void OnNavigatedTo(NavigatedToEventArgs args)
+        {
+            base.OnNavigatedTo(args);
+            // Đảm bảo trạng thái luôn sạch khi quay lại từ trang chi tiết
+            ResetScanState();
         }
 
         /// <summary>
@@ -145,7 +146,7 @@ namespace VinhKhanh.Pages
             {
                 Debug.WriteLine("QRCodePage.OnDisappearing: Trang đang ẩn...");
 
-                QRScannerView.IsDetecting = false;
+                StopScanner();
 
                 Debug.WriteLine("QRCodePage: Camera chuyển sang trạng thái nghỉ");
             }
@@ -317,6 +318,9 @@ namespace VinhKhanh.Pages
                 if (restaurant != null)
                 {
                     _hasNavigated = true; // đánh dấu đã chuyển trang
+                    StopScanner();
+                    _isProcessing = false; // tránh bị kẹt state nếu lifecycle không chạy như kỳ vọng
+
                     Debug.WriteLine($"✅ QRCodePage: Tìm thấy nhà hàng - {restaurant.Name}");
 
                     await Shell.Current.Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioPlaybackService));
@@ -332,7 +336,7 @@ namespace VinhKhanh.Pages
 
                 _isProcessing = false;
                 _lastScannedResult = null;
-                QRScannerView.IsDetecting = true;
+                await StartScannerAsync();
             }
             catch (Exception ex)
             {
@@ -346,7 +350,7 @@ namespace VinhKhanh.Pages
 
                 _isProcessing = false;
                 _lastScannedResult = null;
-                QRScannerView.IsDetecting = true;
+                await StartScannerAsync();
             }
         }
 
@@ -362,19 +366,58 @@ namespace VinhKhanh.Pages
             QRScannerView.CameraLocation = CameraLocation.Rear;
         }
 
+        private void ResetScanState()
+        {
+            _isProcessing = false;
+            _hasNavigated = false;
+            _lastScannedResult = null;
+        }
+
+        private void StopScanner()
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                QRScannerView.IsDetecting = false;
+                QRScannerView.IsEnabled = false;
+            });
+        }
+
+        private async Task StartScannerAsync()
+        {
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                QRScannerView.IsDetecting = false;
+                QRScannerView.IsEnabled = false;
+            });
+
+            await Task.Delay(180);
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                ConfigureScanner();
+                QRScannerView.IsEnabled = true;
+                QRScannerView.IsDetecting = true;
+            });
+        }
+
         // ============ TÍNH NĂNG CHỌN ẢNH ============
         private async void OnPickImageClicked(object sender, EventArgs e)
         {
             if (_isProcessing)
             {
+                Debug.WriteLine("QRCodePage: Bỏ qua chọn ảnh vì đang xử lý mã QR...");
                 return;
             }
+
+            // luôn làm sạch trạng thái cũ trước khi chọn ảnh
+            _hasNavigated = false;
+            _lastScannedResult = null;
 
             var language = _localizationService.CurrentLanguage;
 
             try
             {
-                QRScannerView.IsDetecting = false;
+                StopScanner();
 
                 var photo = await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions
                 {
@@ -383,7 +426,7 @@ namespace VinhKhanh.Pages
 
                 if (photo is null)
                 {
-                    QRScannerView.IsDetecting = true;
+                    await StartScannerAsync();
                     return;
                 }
 
@@ -397,7 +440,7 @@ namespace VinhKhanh.Pages
 
                     _isProcessing = false;
                     _lastScannedResult = null;
-                    QRScannerView.IsDetecting = true;
+                    await StartScannerAsync();
                     return;
                 }
 
@@ -416,7 +459,7 @@ namespace VinhKhanh.Pages
 
                 _isProcessing = false;
                 _lastScannedResult = null;
-                QRScannerView.IsDetecting = true;
+                await StartScannerAsync();
             }
             catch (PermissionException)
             {
@@ -427,7 +470,7 @@ namespace VinhKhanh.Pages
 
                 _isProcessing = false;
                 _lastScannedResult = null;
-                QRScannerView.IsDetecting = true;
+                await StartScannerAsync();
             }
             catch (Exception ex)
             {
@@ -440,7 +483,7 @@ namespace VinhKhanh.Pages
 
                 _isProcessing = false;
                 _lastScannedResult = null;
-                QRScannerView.IsDetecting = true;
+                await StartScannerAsync();
             }
         }
 
