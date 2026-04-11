@@ -11,6 +11,10 @@ require_once __DIR__ . '/includes/cloudinary.php';
 $fb = new FirebaseRTDB();
 
 $categories = $fb->get('vinhkhanh/categories') ?: [];
+$allUsers = $fb->get('vinhkhanh/users') ?: [];
+$owners = array_filter($allUsers, function($u) {
+    return $u && isset($u['Role']) && $u['Role'] == 2;
+});
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : null;
 $poi = null;
@@ -76,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'ImageUrl' => $imageUrl,
         'CloudinaryId' => $cloudinaryId,
         'IsActive' => intval($_POST['IsActive']),
+        'OwnerId' => (isset($_POST['OwnerId']) && $_POST['OwnerId'] !== '') ? intval($_POST['OwnerId']) : null,
         'Address' => $_POST['Address'] ?? '',
         'AdrEn' => $_POST['AdrEn'] ?? '',
         'AdrFr' => $_POST['AdrFr'] ?? '',
@@ -129,6 +134,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ?>
                                 <option value="<?php echo $cat['Id']; ?>" <?php echo ($poi['CategoryId'] ?? 0) == $cat['Id'] ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($cat['Name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Chủ POI (Owner)</label>
+                        <select name="OwnerId" class="form-control">
+                            <option value="">-- Không có (Admin quản lý) --</option>
+                            <?php foreach ($owners as $owner): ?>
+                                <option value="<?php echo $owner['Id']; ?>" <?php echo isset($poi['OwnerId']) && $poi['OwnerId'] == $owner['Id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars(($owner['FullName'] ?? $owner['Username']) . ' (' . $owner['Username'] . ')'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
