@@ -211,15 +211,54 @@ namespace VinhKhanh.Pages
                 .Replace("\n", " ");
         }
 
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+
+            if (_currentTab == "qrcode")
+            {
+                _ = _qrcodePage.ActivateFromHostAsync();
+            }
+        }
+
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+            // Khi rời MainPage (vd: push detail), dừng scanner để tránh state treo camera
+            _qrcodePage.DeactivateFromHost();
+        }
+
         private void OnTabTapped(object sender, TappedEventArgs e)
         {
             var tab = e.Parameter as string;
 
             if (tab == null) return;
 
+            // Bấm lại chính tab hiện tại: không re-render để tránh lỗi UI,
+            // riêng tab QR thì restart scanner nhẹ để user quét lại ngay.
+            if (tab == _currentTab)
+            {
+                if (tab == "qrcode")
+                {
+                    _ = _qrcodePage.ActivateFromHostAsync();
+                }
+                return;
+            }
+
+            if (_currentTab == "qrcode")
+            {
+                _qrcodePage.DeactivateFromHost();
+            }
+
             _currentTab = tab;
             UpdateTabUI();
             ShowTabContent(tab);
+
+            if (tab == "qrcode")
+            {
+                _ = _qrcodePage.ActivateFromHostAsync();
+            }
         }
 
         private void UpdateTabUI()

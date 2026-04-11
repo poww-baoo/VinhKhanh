@@ -106,20 +106,7 @@ namespace VinhKhanh.Pages
             {
                 Debug.WriteLine("QRCodePage.OnAppearing: Trang đang xuất hiện...");
 
-                ResetScanState();
-
-                var hasPermission = await RequestCameraPermissionAsync();
-                if (!hasPermission)
-                {
-                    StopScanner();
-                    return;
-                }
-
-                // máy yếu cần thêm thời gian init camera
-                await Task.Delay(700);
-
-                await StartScannerAsync();
-                Debug.WriteLine("QRCodePage: Camera được bật + scanner configured");
+                await ActivateScannerAsync();
             }
             catch (Exception ex)
             {
@@ -154,6 +141,29 @@ namespace VinhKhanh.Pages
             {
                 Debug.WriteLine($"QRCodePage.OnDisappearing: Lỗi - {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Dùng khi QR page được nhúng trong host page/tab (không nhận lifecycle đầy đủ của ContentPage).
+        /// </summary>
+        public async Task ActivateFromHostAsync()
+        {
+            try
+            {
+                await ActivateScannerAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"QRCodePage.ActivateFromHostAsync: Lỗi - {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Dùng khi tab QR bị rời đi để dừng camera gọn.
+        /// </summary>
+        public void DeactivateFromHost()
+        {
+            StopScanner();
         }
 
         // ============ QUẢN LÝ NGÔN NGỮ ============
@@ -260,12 +270,13 @@ namespace VinhKhanh.Pages
                     return;
                 }
 
-                var barcode = e.Results.FirstOrDefault();
-                var result = barcode?.Value?.Trim();
+                var result = e.Results
+                    .Select(x => x?.Value?.Trim())
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
 
                 if (string.IsNullOrWhiteSpace(result))
                 {
-                    Debug.WriteLine("QRCodePage: Mã QR trống");
+                    Debug.WriteLine("QRCodePage: Không có kết quả QR hợp lệ trong frame hiện tại");
                     return;
                 }
 
@@ -358,12 +369,30 @@ namespace VinhKhanh.Pages
         {
             QRScannerView.Options = new BarcodeReaderOptions
             {
+                // Thư viện hiện tại hỗ trợ ổn định với nhóm định dạng 2D
                 Formats = BarcodeFormats.TwoDimensional,
                 AutoRotate = true,
                 Multiple = false
             };
 
             QRScannerView.CameraLocation = CameraLocation.Rear;
+        }
+
+        private async Task ActivateScannerAsync()
+        {
+            ResetScanState();
+
+            var hasPermission = await RequestCameraPermissionAsync();
+            if (!hasPermission)
+            {
+                StopScanner();
+                return;
+            }
+
+            // máy yếu cần thêm thời gian init camera
+            await Task.Delay(350);
+            await StartScannerAsync();
+            Debug.WriteLine("QRCodePage: Scanner đã sẵn sàng từ ActivateScannerAsync");
         }
 
         private void ResetScanState()
