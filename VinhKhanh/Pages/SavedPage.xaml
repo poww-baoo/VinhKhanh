@@ -2,9 +2,15 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:VinhKhanh.Models"
+             xmlns:converters="clr-namespace:VinhKhanh.Converters"
+             xmlns:services="clr-namespace:VinhKhanh.Services"
              x:Class="VinhKhanh.Pages.SavedPage"
              Padding="0"
              BackgroundColor="#FAFAFA">
+
+    <ContentPage.Resources>
+        <converters:LocalizationConverter x:Key="LocalizationConverter"/>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,*" RowSpacing="0">
 
@@ -51,18 +57,21 @@
 
                                     <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="12">
                                         <Label Text="{Binding CategoryName, StringFormat='📍 {0}'}" FontSize="11" TextColor="#999999"/>
-                                        <Label Text="{Binding YearEstablished, StringFormat='⏱️ Từ năm {0}'}" FontSize="11" TextColor="#999999"/>
+                                        <Label Text="{Binding YearEstablished, StringFormat='⏱️ {0}'}" FontSize="11" TextColor="#999999"/>
                                     </HorizontalStackLayout>
 
                                     <Label Grid.Row="2" Grid.Column="1"
-                                           Text="{Binding Highlights}"
+                                           Text="{Binding DisplayHighlights}"
                                            FontSize="11"
                                            TextColor="#666666"
                                            LineBreakMode="TailTruncation"
                                            MaxLines="2"/>
 
                                     <HorizontalStackLayout Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Spacing="8" Margin="0,4,0,0">
-                                        <Button Text="🔊 Nghe"
+                                        <Button Text="{Binding Source={x:Static services:LocalizationService.Instance},
+                                                               Path=CurrentLanguage,
+                                                               Converter={StaticResource LocalizationConverter},
+                                                               ConverterParameter=ListenButton}"
                                                 Clicked="OnPlayAudioClicked"
                                                 CommandParameter="{Binding .}"
                                                 HorizontalOptions="FillAndExpand"
@@ -72,7 +81,10 @@
                                                 CornerRadius="6"
                                                 FontSize="11"
                                                 BorderWidth="0"/>
-                                        <Button Text="📋 Chi tiết"
+                                        <Button Text="{Binding Source={x:Static services:LocalizationService.Instance},
+                                                               Path=CurrentLanguage,
+                                                               Converter={StaticResource LocalizationConverter},
+                                                               ConverterParameter=DetailsButton}"
                                                 Clicked="OnViewDetailsClicked"
                                                 CommandParameter="{Binding .}"
                                                 HorizontalOptions="FillAndExpand"

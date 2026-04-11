@@ -226,7 +226,7 @@
                                             <!-- Distance and Time -->
                                             <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="12">
                                                 <Label Text="{Binding CategoryName, StringFormat='📍 {0}'}" FontSize="11" TextColor="#999999"/>
-                                                <Label Text="{Binding YearEstablished, StringFormat='⏱️ Từ năm {0}'}" FontSize="11" TextColor="#999999"/>
+                                                <Label Text="{Binding DisplayYearEstablished}" FontSize="11" TextColor="#999999"/>
                                             </HorizontalStackLayout>
 
                                             <!-- Highlights -->

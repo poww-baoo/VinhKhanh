@@ -50,10 +50,43 @@ namespace VinhKhanh.Pages
         private static T? ResolveService<T>() where T : class =>
             Application.Current?.Handler?.MauiContext?.Services.GetService<T>();
 
+        private static string BuildHighlightPreview(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            var value = text.Trim();
+            return value.Length > 120 ? value[..120] + "..." : value;
+        }
+
+        private void ApplyRestaurantLocalization()
+        {
+            var language = _localizationService.CurrentLanguage;
+
+            foreach (var restaurant in _savedRestaurants)
+            {
+                var localizedAddress = restaurant.GetAddressByLanguage(language);
+                restaurant.DisplayAddress = string.IsNullOrWhiteSpace(localizedAddress)
+                    ? restaurant.Address
+                    : localizedAddress;
+
+                var localizedText = restaurant.GetTextByLanguage(language);
+                if (string.IsNullOrWhiteSpace(localizedText))
+                {
+                    localizedText = restaurant.GetHistoryByLanguage(language);
+                }
+
+                restaurant.DisplayHighlights = BuildHighlightPreview(localizedText);
+            }
+        }
+
         private void OnLanguageChangedEvent(object? sender, EventArgs e)
         {
             UpdateUI();
-            _ = LoadSavedRestaurantsAsync();
+            ApplyRestaurantLocalization();
+            MainThread.BeginInvokeOnMainThread(RefreshSavedListUI);
         }
 
         private void UpdateUI()
@@ -62,14 +95,12 @@ namespace VinhKhanh.Pages
             {
                 var language = _localizationService.CurrentLanguage;
                 Title = _localizationService.GetString("Saved", language);
-                
-                // Update SavedPageLabel
+
                 if (SavedPageLabel is not null)
                 {
                     SavedPageLabel.Text = _localizationService.GetString("SavedRestaurantsLabel", language);
                 }
-                
-                // Update NoSavedTextLabel
+
                 if (NoSavedTextLabel is not null)
                 {
                     NoSavedTextLabel.Text = _localizationService.GetString("NoSavedRestaurants", language);
@@ -99,14 +130,6 @@ namespace VinhKhanh.Pages
                         var poi = await _databaseService.GetPoiByIdAsync(poiId);
                         if (poi != null)
                         {
-                            // Tạo highlights giống ExplorePage
-                            var highlights = string.IsNullOrWhiteSpace(poi.TextVi)
-                                ? poi.History
-                                : poi.TextVi;
-
-                            if (highlights.Length > 120)
-                                highlights = highlights[..120] + "...";
-
                             var restaurant = new Restaurant
                             {
                                 Id = poi.Id.ToString(),
@@ -115,14 +138,23 @@ namespace VinhKhanh.Pages
                                 Name = poi.Name,
                                 YearEstablished = poi.YearEstablished,
                                 History = poi.History,
+                                HistoryEn = poi.HistoryEn,
+                                HistoryJp = poi.HistoryJp,
+                                HistoryZh = poi.HistoryZh,
+                                HistoryRu = poi.HistoryRu,
+                                HistoryFr = poi.HistoryFr,
                                 Address = poi.Address,
+                                AdrEn = poi.AdrEn,
+                                AdrJp = poi.AdrJp,
+                                AdrZh = poi.AdrZh,
+                                AdrRu = poi.AdrRu,
+                                AdrFr = poi.AdrFr,
                                 TextVi = poi.TextVi,
                                 TextEn = poi.TextEn,
                                 TextZh = poi.TextZh,
                                 TextJa = poi.TextJa,
                                 TextRu = poi.TextRu,
                                 TextFr = poi.TextFr,
-                                Highlights = highlights,
                                 Rating = poi.Rating,
                                 Latitude = poi.Lat,
                                 Longitude = poi.Lng,
@@ -131,18 +163,16 @@ namespace VinhKhanh.Pages
                                 ImageFileName = poi.ImageFileName,
                                 DisplayImage = _imageSyncService.GetLocalPath(poi.ImageFileName)
                             };
+
                             _savedRestaurants.Add(restaurant);
                         }
                     }
                 }
 
-                // Sắp xếp theo Priority như ExplorePage
                 _savedRestaurants.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+                ApplyRestaurantLocalization();
 
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    RefreshSavedListUI();
-                });
+                await MainThread.InvokeOnMainThreadAsync(RefreshSavedListUI);
             }
             catch (Exception ex)
             {

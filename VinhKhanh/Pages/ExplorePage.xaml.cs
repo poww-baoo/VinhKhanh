@@ -159,7 +159,6 @@ public partial class ExplorePage : ContentPage
 
     private static T? ResolveService<T>() where T : class =>
         Application.Current?.Handler?.MauiContext?.Services.GetService<T>();
-
     private static Restaurant MapPoiToRestaurant(Poi poi)
     {
         var highlights = string.IsNullOrWhiteSpace(poi.TextVi)
@@ -220,6 +219,7 @@ public partial class ExplorePage : ContentPage
     private void ApplyRestaurantLocalization()
     {
         var language = NormalizeLanguageCode(_localizationService.CurrentLanguage);
+        var yearLabel = _localizationService.GetString("YearEstablished", language);
 
         foreach (var restaurant in _allRestaurants)
         {
@@ -235,6 +235,7 @@ public partial class ExplorePage : ContentPage
             }
 
             restaurant.DisplayHighlights = BuildHighlightPreview(localizedText);
+            restaurant.DisplayYearEstablished = $"⏱️ {yearLabel} {restaurant.YearEstablished}";
         }
     }
 
