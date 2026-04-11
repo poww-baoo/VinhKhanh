@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using VinhKhanh.Models;
@@ -42,6 +43,20 @@ namespace VinhKhanh.Pages
         private string? _lastAutoPlayedRestaurantId;
         private DateTime _lastAutoPlayedAt = DateTime.MinValue;
 
+        // Tracking TTS queue + popup
+        private readonly Queue<Restaurant> _trackingNarrationQueue = new();
+        private readonly HashSet<string> _queuedOrPlayingRestaurantIds = new(StringComparer.OrdinalIgnoreCase);
+        private readonly List<Restaurant> _pendingPopupRestaurants = new();
+        private readonly SemaphoreSlim _trackingNarrationLock = new(1, 1);
+        private CancellationTokenSource? _queuePopupDebounceCts;
+        private int _trackingQueueWorkerState;
+        private readonly ObservableCollection<Restaurant> _popupNarrationItems = new();
+        private readonly Dictionary<string, Restaurant> _insideGeofenceRestaurants = new(StringComparer.OrdinalIgnoreCase);
+        private Location? _latestTrackingLocation;
+        private Restaurant? _currentNarrationRestaurant;
+        private bool _isNarrationQueueExpanded;
+        private bool _isNarrationPopupMinimized;
+
         public MainPage()
         {
             InitializeComponent();
@@ -55,6 +70,7 @@ namespace VinhKhanh.Pages
 
             _locationService.LocationUpdated += OnLocationUpdated;
             _locationService.EnteredGeofence += OnEnteredGeofence;
+            _locationService.ExitedGeofence += OnExitedGeofence;
             _audioService.PlaybackCompleted += OnPlaybackCompleted;
             _localizationService.LanguageChanged += OnLocalizationLanguageChanged;
             if (_firebaseSyncService is not null)
@@ -72,6 +88,11 @@ namespace VinhKhanh.Pages
             CachePageContents();
             UpdateTabLabels();
             ShowTabContent("explore");
+
+            TrackingNarrationQueueCollection.ItemsSource = _popupNarrationItems;
+            SetNarrationQueueExpanded(false);
+            SetNarrationPopupMinimized(false);
+            UpdateTrackingNarrationPopupTexts();
 
             Loaded += OnLoaded;
         }
@@ -323,41 +344,69 @@ namespace VinhKhanh.Pages
 
         private void OnLocationUpdated(object? sender, Location location)
         {
+            _latestTrackingLocation = location;
+
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 _trackingPage.UpdateLocation(location);
+                RefreshPopupFromInsideGeofences();
             });
 
-            _ = TryAutoPlayNearestRestaurantAsync(location);
+            // Không phát trực tiếp ở đây, dùng luồng geofence + queue để có popup danh sách.
         }
 
         private async void OnEnteredGeofence(object? sender, Restaurant restaurant)
         {
-            var language = _localizationService.CurrentLanguage;
-
-            // 🔥 TẠO CÂU CHÀO NGẮN GỌN THEO NGÔN NGỮ
-            string ttsText = language switch
+            await _trackingNarrationLock.WaitAsync();
+            try
             {
-                "en" => $"You have arrived at {restaurant.Name}",
-                "zh" => $"您已到达 {restaurant.Name}",
-                "ja" => $"{restaurant.Name} に到着しました",
-                "ru" => $"Вы прибыли в {restaurant.Name}",
-                "fr" => $"Vous êtes arrivé à {restaurant.Name}",
-                _ => $"Bạn đã đến {restaurant.Name} rồi"
-            };
-
-            var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
-
-            await _audioService.PlayTextAsync(
-                ttsText,
-                language,
-                restaurant.Name,
-                restaurant.Id);
-
-            MainThread.BeginInvokeOnMainThread(() =>
+                if (!string.IsNullOrWhiteSpace(restaurant?.Id))
+                {
+                    _insideGeofenceRestaurants[restaurant.Id] = restaurant;
+                }
+            }
+            finally
             {
-                _trackingPage.UpdateStatus($"{playingText}: {restaurant.Name}");
-            });
+                _trackingNarrationLock.Release();
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(RefreshPopupFromInsideGeofences);
+            await EnqueueTrackingNarrationAsync(restaurant);
+        }
+
+        private async void OnExitedGeofence(object? sender, Restaurant restaurant)
+        {
+            if (restaurant is null || string.IsNullOrWhiteSpace(restaurant.Id))
+            {
+                return;
+            }
+
+            await _trackingNarrationLock.WaitAsync();
+            try
+            {
+                _insideGeofenceRestaurants.Remove(restaurant.Id);
+                _pendingPopupRestaurants.RemoveAll(x => string.Equals(x.Id, restaurant.Id, StringComparison.OrdinalIgnoreCase));
+                _queuedOrPlayingRestaurantIds.Remove(restaurant.Id);
+
+                if (_trackingNarrationQueue.Count > 0)
+                {
+                    var kept = _trackingNarrationQueue
+                        .Where(x => !string.Equals(x.Id, restaurant.Id, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    _trackingNarrationQueue.Clear();
+                    foreach (var item in kept)
+                    {
+                        _trackingNarrationQueue.Enqueue(item);
+                    }
+                }
+            }
+            finally
+            {
+                _trackingNarrationLock.Release();
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(RefreshPopupFromInsideGeofences);
         }
 
         private void OnPlaybackCompleted(object? sender, AudioContent e)
@@ -381,13 +430,14 @@ namespace VinhKhanh.Pages
         private async void OnLocalizationLanguageChanged(object? sender, EventArgs e)
         {
             UpdateTabLabels();
+            UpdateTrackingNarrationPopupTexts();
             await LoadDataFromDatabaseAsync();
         }
 
         private void UpdateTabLabels()
         {
             var language = _localizationService.CurrentLanguage;
-            
+
             ((Label)ExploreTab.Children[1]).Text = _localizationService.GetString("Explore", language);
             ((Label)SavedTab.Children[1]).Text = _localizationService.GetString("Saved", language);
             ((Label)TrackingTab.Children[1]).Text = _localizationService.GetString("Tracking", language);
@@ -395,66 +445,496 @@ namespace VinhKhanh.Pages
             ((Label)SettingsTab.Children[1]).Text = _localizationService.GetString("Settings", language);
         }
 
-        private async Task TryAutoPlayNearestRestaurantAsync(Location location)
+        private async Task EnqueueTrackingNarrationAsync(Restaurant restaurant)
         {
+            if (restaurant is null || string.IsNullOrWhiteSpace(restaurant.Id))
+            {
+                return;
+            }
+
+            var added = false;
+
+            await _trackingNarrationLock.WaitAsync();
             try
             {
-                if (_restaurants.Count == 0 || _audioService.IsPlaying)
-                    return;
-
-                var nearby = _restaurants
-                    .Select(r => new
-                    {
-                        Restaurant = r,
-                        Distance = GetDistanceInMeters(
-                            location.Latitude, location.Longitude,
-                            r.Latitude, r.Longitude)
-                    })
-                    .Where(x => x.Distance <= Math.Max(x.Restaurant.GeofenceRadius + 40, AutoPlayNearestDistanceMeters))
-                    .OrderBy(x => x.Distance)
-                    .FirstOrDefault();
-
-                if (nearby is null)
-                    return;
-
-                var now = DateTime.Now;
-                var stillInCooldown =
-                    _lastAutoPlayedRestaurantId == nearby.Restaurant.Id &&
-                    (now - _lastAutoPlayedAt).TotalMinutes < AutoPlayCooldownMinutes;
-
-                if (stillInCooldown)
-                    return;
-
-                _lastAutoPlayedRestaurantId = nearby.Restaurant.Id;
-                _lastAutoPlayedAt = now;
-
-                var language = _localizationService.CurrentLanguage;
-                var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
-
-                string ttsText = language switch
+                if (!_queuedOrPlayingRestaurantIds.Contains(restaurant.Id))
                 {
-                    "en" => $"You have arrived at {nearby.Restaurant.Name}",
-                    "zh" => $"您已到达 {nearby.Restaurant.Name}",
-                    "ja" => $"{nearby.Restaurant.Name} に到着しました",
-                    "ru" => $"Вы прибыли в {nearby.Restaurant.Name}",
-                    "fr" => $"Vous êtes arrivé à {nearby.Restaurant.Name}",
-                    _ => $"Bạn đã đến {nearby.Restaurant.Name} rồi"
-                };
+                    _queuedOrPlayingRestaurantIds.Add(restaurant.Id);
+                    _pendingPopupRestaurants.Add(restaurant);
+                    added = true;
+                }
+            }
+            finally
+            {
+                _trackingNarrationLock.Release();
+            }
+
+            if (!added)
+            {
+                return;
+            }
+
+            _ = ShowTrackingQueuePopupDebouncedAsync();
+        }
+
+        private void UpdateTrackingNarrationPopupTexts()
+        {
+            var language = _localizationService.CurrentLanguage;
+
+            if (TrackingNarrationSubtitleLabel is not null)
+            {
+                TrackingNarrationSubtitleLabel.Text = language == "en"
+                    ? "Default order: Priority, then nearest distance"
+                    : "Mặc định: Priority trước, rồi POI gần hơn";
+            }
+
+            UpdateQueueCountLabel();
+            UpdateCurrentNarrationMiniInfo(_currentNarrationRestaurant);
+        }
+
+        private void SetNarrationQueueExpanded(bool expanded)
+        {
+            _isNarrationQueueExpanded = expanded;
+
+            if (TrackingNarrationQueuePanel is not null)
+            {
+                TrackingNarrationQueuePanel.IsVisible = expanded && !_isNarrationPopupMinimized;
+            }
+
+            if (TrackingNarrationToggleButton is not null)
+            {
+                TrackingNarrationToggleButton.Text = expanded ? "▾" : "▸";
+            }
+        }
+
+        private void SetNarrationPopupMinimized(bool minimized)
+        {
+            _isNarrationPopupMinimized = minimized;
+
+            if (TrackingNarrationMainCard is not null)
+            {
+                TrackingNarrationMainCard.IsVisible = !minimized;
+            }
+
+            if (TrackingNarrationMiniBubble is not null)
+            {
+                TrackingNarrationMiniBubble.IsVisible = minimized;
+            }
+
+            if (minimized)
+            {
+                SetNarrationQueueExpanded(false);
+            }
+
+            TrackingNarrationOverlay.IsVisible = true;
+            UpdateMiniBubbleBadge();
+        }
+
+        private void UpdateMiniBubbleBadge()
+        {
+            if (TrackingNarrationBubbleCountLabel is null)
+            {
+                return;
+            }
+
+            TrackingNarrationBubbleCountLabel.Text = _popupNarrationItems.Count.ToString();
+        }
+
+        private void OnMinimizeTrackingNarrationClicked(object sender, EventArgs e)
+        {
+            SetNarrationPopupMinimized(true);
+        }
+
+        private void OnRestoreTrackingNarrationClicked(object? sender, TappedEventArgs e)
+        {
+            SetNarrationPopupMinimized(false);
+            SetNarrationQueueExpanded(true);
+        }
+
+        private void OnToggleTrackingNarrationQueueClicked(object sender, EventArgs e)
+        {
+            if (_isNarrationPopupMinimized)
+            {
+                SetNarrationPopupMinimized(false);
+                SetNarrationQueueExpanded(true);
+                return;
+            }
+
+            SetNarrationQueueExpanded(!_isNarrationQueueExpanded);
+        }
+
+        private void UpdateQueueCountLabel()
+        {
+            if (TrackingNarrationHintLabel is null)
+            {
+                return;
+            }
+
+            var language = _localizationService.CurrentLanguage;
+            TrackingNarrationHintLabel.Text = language == "en"
+                ? $"{_popupNarrationItems.Count} item(s)"
+                : $"{_popupNarrationItems.Count} mục";
+
+            UpdateMiniBubbleBadge();
+        }
+
+        private void UpdateCurrentNarrationMiniInfo(Restaurant? current)
+        {
+            if (TrackingNarrationCurrentTitleLabel is null || TrackingNarrationCurrentSubtitleLabel is null)
+            {
+                return;
+            }
+
+            var language = _localizationService.CurrentLanguage;
+
+            if (current is null)
+            {
+                TrackingNarrationCurrentTitleLabel.Text = language == "en" ? "No narration playing" : "Chưa phát thuyết minh";
+                TrackingNarrationCurrentSubtitleLabel.Text = language == "en"
+                    ? "Press Play to start queue"
+                    : "Bấm Phát để bắt đầu danh sách";
+                return;
+            }
+
+            TrackingNarrationCurrentTitleLabel.Text = current.Name;
+            TrackingNarrationCurrentSubtitleLabel.Text = language == "en"
+                ? $"Narration language: {language.ToUpperInvariant()}"
+                : $"Ngôn ngữ thuyết minh: {language.ToUpperInvariant()}";
+        }
+
+        private List<Restaurant> SortRestaurantsByPriorityThenDistance(IEnumerable<Restaurant> restaurants)
+        {
+            return restaurants
+                .OrderBy(r => r.Priority)
+                .ThenBy(r => _latestTrackingLocation is null
+                    ? double.MaxValue
+                    : GetDistanceInMeters(
+                        _latestTrackingLocation.Latitude,
+                        _latestTrackingLocation.Longitude,
+                        r.Latitude,
+                        r.Longitude))
+                .ThenBy(r => r.Name)
+                .ToList();
+        }
+
+        private void RefreshPopupNarrationItems(IEnumerable<Restaurant> items)
+        {
+            var sorted = SortRestaurantsByPriorityThenDistance(items);
+
+            _popupNarrationItems.Clear();
+            foreach (var item in sorted)
+            {
+                _popupNarrationItems.Add(item);
+            }
+
+            UpdateQueueCountLabel();
+        }
+
+        private void RefreshPopupFromInsideGeofences()
+        {
+            RefreshPopupNarrationItems(_insideGeofenceRestaurants.Values);
+        }
+
+        private async Task ShowTrackingQueuePopupDebouncedAsync()
+        {
+            _queuePopupDebounceCts?.Cancel();
+            _queuePopupDebounceCts = new CancellationTokenSource();
+            var token = _queuePopupDebounceCts.Token;
+
+            try
+            {
+                await Task.Delay(650, token);
+
+                List<Restaurant> popupItems;
+                await _trackingNarrationLock.WaitAsync(token);
+                try
+                {
+                    popupItems = _pendingPopupRestaurants
+                        .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+                        .Select(g => g.First())
+                        .ToList();
+
+                    _pendingPopupRestaurants.Clear();
+                }
+                finally
+                {
+                    _trackingNarrationLock.Release();
+                }
+
+                if (popupItems.Count == 0)
+                {
+                    return;
+                }
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    _trackingPage.UpdateStatus($"{playingText}: {nearby.Restaurant.Name}");
-                });
+                    var merged = _popupNarrationItems
+                        .Concat(popupItems)
+                        .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+                        .Select(g => g.First())
+                        .ToList();
 
-                await _audioService.PlayTextAsync(
-                    ttsText,
-                    language,
-                    nearby.Restaurant.Name,
-                    nearby.Restaurant.Id);
+                    // luôn giữ item đang inside geofence + item vừa thêm
+                    var insideMerged = _insideGeofenceRestaurants.Values
+                        .Concat(merged)
+                        .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+                        .Select(g => g.First())
+                        .ToList();
+
+                    RefreshPopupNarrationItems(insideMerged);
+                    TrackingNarrationOverlay.IsVisible = true;
+                    if (!_isNarrationPopupMinimized)
+                    {
+                        SetNarrationQueueExpanded(true);
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // có item mới vào queue, chờ lần debounce mới
+            }
+        }
+
+        private async void OnPlayTrackingNarrationClicked(object sender, EventArgs e)
+        {
+            var selectedOrder = _popupNarrationItems.ToList();
+            if (selectedOrder.Count == 0)
+            {
+                TrackingNarrationOverlay.IsVisible = true;
+                SetNarrationQueueExpanded(false);
+                return;
+            }
+
+            SetNarrationQueueExpanded(false);
+
+            await _trackingNarrationLock.WaitAsync();
+            try
+            {
+                foreach (var item in selectedOrder)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Id))
+                    {
+                        continue;
+                    }
+
+                    if (_trackingNarrationQueue.All(x => !string.Equals(x.Id, item.Id, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _trackingNarrationQueue.Enqueue(item);
+                    }
+
+                    _queuedOrPlayingRestaurantIds.Add(item.Id);
+                }
+            }
+            finally
+            {
+                _trackingNarrationLock.Release();
+            }
+
+            TrackingNarrationOverlay.IsVisible = true;
+            _ = ProcessTrackingNarrationQueueAsync();
+        }
+
+        private async void OnSkipTrackingNarrationClicked(object sender, EventArgs e)
+        {
+            await _trackingNarrationLock.WaitAsync();
+            try
+            {
+                _pendingPopupRestaurants.Clear();
+                _trackingNarrationQueue.Clear();
+            }
+            finally
+            {
+                _trackingNarrationLock.Release();
+            }
+
+            // Giữ mini-player + danh sách POI đang còn trong vùng, chỉ bỏ qua queue phát hiện tại.
+            TrackingNarrationOverlay.IsVisible = true;
+            RefreshPopupFromInsideGeofences();
+            SetNarrationQueueExpanded(false);
+        }
+
+        private async void OnNextTrackingNarrationClicked(object sender, EventArgs e)
+        {
+            if (!_audioService.IsPlaying)
+            {
+                // nếu chưa phát mà đang có queue thì cho chạy luôn mục kế tiếp
+                _ = ProcessTrackingNarrationQueueAsync();
+                return;
+            }
+
+            await _audioService.StopAsync();
+        }
+
+        private void OnPrioritizeNarrationPoiTapped(object sender, EventArgs e)
+        {
+            if (sender is not Button { CommandParameter: Restaurant restaurant })
+            {
+                return;
+            }
+
+            MovePopupRestaurantToTop(restaurant);
+            UpdateQueueCountLabel();
+        }
+
+        private void OnMoveNarrationUpClicked(object sender, EventArgs e)
+        {
+            if (sender is not Button { CommandParameter: Restaurant restaurant })
+            {
+                return;
+            }
+
+            var index = _popupNarrationItems.IndexOf(restaurant);
+            if (index <= 0)
+            {
+                return;
+            }
+
+            _popupNarrationItems.Move(index, index - 1);
+        }
+
+        private void OnMoveNarrationDownClicked(object sender, EventArgs e)
+        {
+            if (sender is not Button { CommandParameter: Restaurant restaurant })
+            {
+                return;
+            }
+
+            var index = _popupNarrationItems.IndexOf(restaurant);
+            if (index < 0 || index >= _popupNarrationItems.Count - 1)
+            {
+                return;
+            }
+
+            _popupNarrationItems.Move(index, index + 1);
+        }
+
+        private void MovePopupRestaurantToTop(Restaurant restaurant)
+        {
+            var index = _popupNarrationItems.IndexOf(restaurant);
+            if (index <= 0)
+            {
+                return;
+            }
+
+            _popupNarrationItems.Move(index, 0);
+        }
+
+        private async Task ProcessTrackingNarrationQueueAsync()
+        {
+            if (Interlocked.Exchange(ref _trackingQueueWorkerState, 1) == 1)
+            {
+                return;
+            }
+
+            try
+            {
+                while (true)
+                {
+                    Restaurant? next = null;
+
+                    await _trackingNarrationLock.WaitAsync();
+                    try
+                    {
+                        if (_trackingNarrationQueue.Count > 0)
+                        {
+                            next = _trackingNarrationQueue.Dequeue();
+                        }
+                    }
+                    finally
+                    {
+                        _trackingNarrationLock.Release();
+                    }
+
+                    if (next is null)
+                    {
+                        break;
+                    }
+
+                    _currentNarrationRestaurant = next;
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        TrackingNarrationOverlay.IsVisible = true;
+                        UpdateCurrentNarrationMiniInfo(next);
+                    });
+
+                    var language = _localizationService.CurrentLanguage;
+                    var playingText = _localizationService.GetString("Tracking_Status_Playing", language);
+
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        _trackingPage.UpdateStatus($"{playingText}: {next.Name}");
+                    });
+
+                    var ttsText = next.GetTextByLanguage(language);
+                    if (string.IsNullOrWhiteSpace(ttsText))
+                    {
+                        ttsText = next.GetHistoryByLanguage(language);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(ttsText))
+                    {
+                        ttsText = language switch
+                        {
+                            "en" => $"You have arrived at {next.Name}",
+                            "zh" => $"您已到达 {next.Name}",
+                            "ja" => $"{next.Name} に到着しました",
+                            "ru" => $"Вы прибыли в {next.Name}",
+                            "fr" => $"Vous êtes arrivé à {next.Name}",
+                            _ => $"Bạn đã đến {next.Name} rồi"
+                        };
+                    }
+
+                    await _audioService.PlayTextAsync(
+                        ttsText,
+                        language,
+                        next.Name,
+                        next.Id);
+
+                    await _trackingNarrationLock.WaitAsync();
+                    try
+                    {
+                        _queuedOrPlayingRestaurantIds.Remove(next.Id);
+                    }
+                    finally
+                    {
+                        _trackingNarrationLock.Release();
+                    }
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AutoPlayNearest] {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[TrackingNarrationQueue] {ex.Message}");
+            }
+            finally
+            {
+                _currentNarrationRestaurant = null;
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    UpdateCurrentNarrationMiniInfo(null);
+                    TrackingNarrationOverlay.IsVisible = true;
+                    if (_popupNarrationItems.Count == 0)
+                    {
+                        SetNarrationQueueExpanded(false);
+                    }
+                });
+
+                Interlocked.Exchange(ref _trackingQueueWorkerState, 0);
+
+                var hasPending = false;
+                await _trackingNarrationLock.WaitAsync();
+                try
+                {
+                    hasPending = _trackingNarrationQueue.Count > 0;
+                }
+                finally
+                {
+                    _trackingNarrationLock.Release();
+                }
+
+                if (hasPending)
+                {
+                    _ = ProcessTrackingNarrationQueueAsync();
+                }
             }
         }
 

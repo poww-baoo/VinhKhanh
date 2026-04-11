@@ -6,14 +6,226 @@
              Padding="0"
              BackgroundColor="#FFFFFF">
     <Grid RowDefinitions="*,Auto" RowSpacing="0">
-        
+
         <!-- Content Container -->
         <Grid Grid.Row="0" x:Name="ContentFrame" Padding="0"/>
+
+        <!-- Tracking Narration Queue Popup (always visible mini player) -->
+        <Grid x:Name="TrackingNarrationOverlay"
+              Grid.RowSpan="2"
+              IsVisible="True"
+              BackgroundColor="Transparent"
+              ZIndex="10"
+              Padding="12,0,12,82"
+              VerticalOptions="End"
+              InputTransparent="False">
+            <Grid>
+                <Border x:Name="TrackingNarrationMainCard"
+                        Stroke="#274D78"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 18"
+                        BackgroundColor="#10233C"
+                        HorizontalOptions="Fill"
+                        MaximumWidthRequest="460">
+                    <Grid RowDefinitions="Auto,Auto" Padding="12" RowSpacing="8">
+                        <!-- Mini player always shown -->
+                        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="10">
+                            <Label Text="🎵" FontSize="20" VerticalOptions="Center"/>
+                            <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                <Label x:Name="TrackingNarrationCurrentTitleLabel"
+                                       Text="Chưa phát"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="White"
+                                       LineBreakMode="TailTruncation"/>
+                                <Label x:Name="TrackingNarrationCurrentSubtitleLabel"
+                                       Text="Ngôn ngữ thuyết minh"
+                                       FontSize="11"
+                                       TextColor="#C8D6E5"
+                                       LineBreakMode="TailTruncation"/>
+                            </VerticalStackLayout>
+
+                            <Button Grid.Column="2"
+                                    Text="⏭"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    CornerRadius="18"
+                                    Padding="0"
+                                    FontSize="14"
+                                    BackgroundColor="#FF8C3A"
+                                    TextColor="White"
+                                    Clicked="OnNextTrackingNarrationClicked"/>
+
+                            <Button Grid.Column="3"
+                                    Text="◦"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    CornerRadius="18"
+                                    Padding="0"
+                                    FontSize="18"
+                                    BackgroundColor="Transparent"
+                                    BorderColor="#5D748F"
+                                    BorderWidth="1"
+                                    TextColor="#DCE6F2"
+                                    Clicked="OnMinimizeTrackingNarrationClicked"/>
+
+                            <Button x:Name="TrackingNarrationToggleButton"
+                                    Grid.Column="4"
+                                    Text="▸"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    CornerRadius="18"
+                                    Padding="0"
+                                    FontSize="13"
+                                    BackgroundColor="Transparent"
+                                    BorderColor="#5D748F"
+                                    BorderWidth="1"
+                                    TextColor="#DCE6F2"
+                                    Clicked="OnToggleTrackingNarrationQueueClicked"/>
+                        </Grid>
+
+                        <!-- Expandable queue panel -->
+                        <Grid x:Name="TrackingNarrationQueuePanel"
+                              Grid.Row="1"
+                              IsVisible="False"
+                              RowDefinitions="Auto,*,Auto"
+                              RowSpacing="8">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <VerticalStackLayout Spacing="1">
+                                    <Label Text="Danh sách phát thuyết minh" FontSize="13" FontAttributes="Bold" TextColor="#EAF2FF"/>
+                                    <Label x:Name="TrackingNarrationSubtitleLabel"
+                                           Text="Ưu tiên: Priority → khoảng cách gần hơn"
+                                           FontSize="11"
+                                           TextColor="#B7C9DE"/>
+                                </VerticalStackLayout>
+                                <Label x:Name="TrackingNarrationHintLabel"
+                                       Grid.Column="1"
+                                       Text="0 mục"
+                                       FontSize="11"
+                                       VerticalOptions="Center"
+                                       TextColor="#FFCB9A"/>
+                            </Grid>
+
+                            <CollectionView x:Name="TrackingNarrationQueueCollection"
+                                            Grid.Row="1"
+                                            SelectionMode="None"
+                                            HeightRequest="170">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,6"
+                                                Padding="8,6"
+                                                Stroke="#355A82"
+                                                StrokeThickness="1"
+                                                BackgroundColor="#173250"
+                                                StrokeShape="RoundRectangle 12">
+                                            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
+                                                <Label Text="{Binding Name}"
+                                                       FontSize="13"
+                                                       FontAttributes="Bold"
+                                                       VerticalOptions="Center"
+                                                       TextColor="#F4F9FF"
+                                                       LineBreakMode="TailTruncation"/>
+
+                                                <Button Grid.Column="1"
+                                                        Text="⭐"
+                                                        WidthRequest="32"
+                                                        HeightRequest="32"
+                                                        CornerRadius="16"
+                                                        Padding="0"
+                                                        FontSize="12"
+                                                        BackgroundColor="#284C74"
+                                                        TextColor="#FFCB9A"
+                                                        Clicked="OnPrioritizeNarrationPoiTapped"
+                                                        CommandParameter="{Binding .}"/>
+                                                <Button Grid.Column="2"
+                                                        Text="⬆"
+                                                        WidthRequest="32"
+                                                        HeightRequest="32"
+                                                        CornerRadius="16"
+                                                        Padding="0"
+                                                        FontSize="12"
+                                                        BackgroundColor="#284C74"
+                                                        TextColor="White"
+                                                        Clicked="OnMoveNarrationUpClicked"
+                                                        CommandParameter="{Binding .}"/>
+                                                <Button Grid.Column="3"
+                                                        Text="⬇"
+                                                        WidthRequest="32"
+                                                        HeightRequest="32"
+                                                        CornerRadius="16"
+                                                        Padding="0"
+                                                        FontSize="12"
+                                                        BackgroundColor="#284C74"
+                                                        TextColor="White"
+                                                        Clicked="OnMoveNarrationDownClicked"
+                                                        CommandParameter="{Binding .}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Button Grid.Column="0"
+                                        Text="Bỏ qua danh sách"
+                                        BackgroundColor="#6B7D90"
+                                        TextColor="White"
+                                        CornerRadius="12"
+                                        HeightRequest="40"
+                                        Clicked="OnSkipTrackingNarrationClicked"/>
+                                <Button Grid.Column="1"
+                                        Text="▶️ Phát"
+                                        BackgroundColor="#FF8C3A"
+                                        TextColor="White"
+                                        CornerRadius="12"
+                                        HeightRequest="40"
+                                        Clicked="OnPlayTrackingNarrationClicked"/>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="TrackingNarrationMiniBubble"
+                        IsVisible="False"
+                        WidthRequest="58"
+                        HeightRequest="58"
+                        Stroke="#274D78"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 29"
+                        BackgroundColor="#10233C"
+                        HorizontalOptions="Start"
+                        VerticalOptions="End"
+                        Padding="0">
+                    <Grid>
+                        <Label Text="🎵" HorizontalOptions="Center" VerticalOptions="Center" FontSize="22"/>
+                        <Border WidthRequest="20"
+                                HeightRequest="20"
+                                HorizontalOptions="End"
+                                VerticalOptions="Start"
+                                Margin="0,4,4,0"
+                                StrokeShape="RoundRectangle 10"
+                                BackgroundColor="#FF8C3A"
+                                StrokeThickness="0">
+                            <Label x:Name="TrackingNarrationBubbleCountLabel"
+                                   Text="0"
+                                   FontSize="10"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   TextColor="White"
+                                   FontAttributes="Bold"/>
+                        </Border>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnRestoreTrackingNarrationClicked"/>
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
 
         <!-- Bottom Navigation Bar -->
         <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" BackgroundColor="#FFFFFF" Padding="0" RowSpacing="0" ColumnSpacing="0">
             <BoxView Grid.Row="0" Grid.ColumnSpan="5" BackgroundColor="#E0E0E0" HeightRequest="0.5"/>
-            
+
             <!-- Explore Tab -->
             <StackLayout Grid.Column="0" Spacing="4" Padding="12" 
                         x:Name="ExploreTab" 

@@ -334,7 +334,7 @@ namespace VinhKhanh.Pages
 
                     Debug.WriteLine($"✅ QRCodePage: Tìm thấy nhà hàng - {restaurant.Name}");
 
-                    await Shell.Current.Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioPlaybackService));
+                    await Shell.Current.Navigation.PushAsync(new RestaurantDetailPage(restaurant, _audioPlaybackService, autoPlayNarrationOnAppear: true));
                     return;
                 }
 

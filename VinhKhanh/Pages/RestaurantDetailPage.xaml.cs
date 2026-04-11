@@ -17,13 +17,15 @@ namespace VinhKhanh.Pages
         private readonly SQLiteDbContext _dbContext;
         private readonly QRCodeService _qrCodeService;
         private readonly string _poiQrPayload;
+        private readonly bool _autoPlayNarrationOnAppear;
+        private bool _hasAutoPlayedNarration;
 
         private string _selectedAudioLanguage = "vi";
         private bool _isSaved = false;
 
         public string DisplayImage { get; private set; } = "placeholder.png";
 
-        public RestaurantDetailPage(Restaurant restaurant, AudioPlaybackService? audioService = null)
+        public RestaurantDetailPage(Restaurant restaurant, AudioPlaybackService? audioService = null, bool autoPlayNarrationOnAppear = false)
         {
             InitializeComponent();
             BindingContext = this;
@@ -35,6 +37,7 @@ namespace VinhKhanh.Pages
             _imageSyncService = ResolveService<ImageSyncService>() ?? new ImageSyncService();
             _dbContext = new SQLiteDbContext();
             _qrCodeService = ResolveService<QRCodeService>() ?? new QRCodeService(_databaseService);
+            _autoPlayNarrationOnAppear = autoPlayNarrationOnAppear;
 
             _poiQrPayload = int.TryParse(_restaurant.Id, out var poiId)
                 ? _qrCodeService.BuildPoiQrPayload(poiId)
@@ -326,6 +329,42 @@ namespace VinhKhanh.Pages
         private async void OnStopClicked(object sender, EventArgs e)
         {
             await _audioService.StopAsync();
+        }
+
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+
+            if (!_autoPlayNarrationOnAppear || _hasAutoPlayedNarration)
+            {
+                return;
+            }
+
+            _hasAutoPlayedNarration = true;
+
+            try
+            {
+                var ttsText = _restaurant.GetTextByLanguage(_selectedAudioLanguage);
+                if (string.IsNullOrWhiteSpace(ttsText))
+                {
+                    ttsText = _restaurant.GetHistoryByLanguage(_selectedAudioLanguage);
+                }
+
+                if (string.IsNullOrWhiteSpace(ttsText))
+                {
+                    return;
+                }
+
+                await _audioService.PlayTextAsync(
+                    ttsText,
+                    _selectedAudioLanguage,
+                    _restaurant.Name,
+                    _restaurant.Id);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[RestaurantDetailPage AutoPlayTTS] {ex.Message}");
+            }
         }
     }
 }
