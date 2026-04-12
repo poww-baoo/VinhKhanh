@@ -11,6 +11,8 @@ namespace VinhKhanh.Services
         private readonly double _debounceSeconds = 3;
         private DateTime _lastLocationUpdate = DateTime.MinValue;
         private readonly LocalizationService _localizationService = LocalizationService.Instance;
+        private readonly object _restaurantsLock = new();
+        private List<Restaurant> _trackedRestaurants = new();
 
         public event EventHandler<Location> LocationUpdated;
         public event EventHandler<Restaurant> EnteredGeofence;
@@ -20,10 +22,32 @@ namespace VinhKhanh.Services
         private Dictionary<string, DateTime> _lastPlaybackTimes = new();
         private bool _isFirstLocationUpdate = true;
 
+        public void SetRestaurants(IEnumerable<Restaurant>? restaurants)
+        {
+            var updated = restaurants?
+                .Where(r => r is not null && !string.IsNullOrWhiteSpace(r.Id))
+                .ToList() ?? new List<Restaurant>();
+
+            lock (_restaurantsLock)
+            {
+                _trackedRestaurants = updated;
+            }
+        }
+
+        private List<Restaurant> GetRestaurantsSnapshot()
+        {
+            lock (_restaurantsLock)
+            {
+                return _trackedRestaurants.ToList();
+            }
+        }
+
         public async Task StartTrackingAsync(List<Restaurant> restaurants)
         {
             if (IsBusy)
                 return;
+
+            SetRestaurants(restaurants);
 
             try
             {
@@ -56,7 +80,7 @@ namespace VinhKhanh.Services
                         if (location != null)
                         {
                             // Lần đầu tiên cập nhật location ngay lập tức, sau đó có debounce
-                            bool shouldUpdate = _isFirstLocationUpdate || 
+                            bool shouldUpdate = _isFirstLocationUpdate ||
                                                (DateTime.Now - _lastLocationUpdate).TotalSeconds >= _debounceSeconds;
 
                             if (shouldUpdate)
@@ -65,7 +89,11 @@ namespace VinhKhanh.Services
                                 _lastLocationUpdate = DateTime.Now;
                                 _isFirstLocationUpdate = false;
 
-                                CheckGeofences(location, restaurants);
+                                var restaurantsSnapshot = GetRestaurantsSnapshot();
+                                if (restaurantsSnapshot.Count > 0)
+                                {
+                                    CheckGeofences(location, restaurantsSnapshot);
+                                }
                             }
                         }
 

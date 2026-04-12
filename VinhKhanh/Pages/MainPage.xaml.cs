@@ -127,6 +127,7 @@ namespace VinhKhanh.Pages
 
                 _explorePage.SetRestaurants(_restaurants);
                 _trackingPage.SetRestaurants(_restaurants);
+                _locationService.SetRestaurants(_restaurants);
             }
             catch (Exception ex)
             {
@@ -349,6 +350,7 @@ namespace VinhKhanh.Pages
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 _trackingPage.UpdateLocation(location);
+                _explorePage.UpdateUserLocation(location);
                 RefreshPopupFromInsideGeofences();
             });
 

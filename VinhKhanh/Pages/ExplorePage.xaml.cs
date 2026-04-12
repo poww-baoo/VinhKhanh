@@ -21,6 +21,8 @@ public partial class ExplorePage : ContentPage
     private const string MapLibreCssUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
     private const string MapLibreJsUrl = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
     private const string MapHtmlCacheFileName = "explore-map-cache.html";
+    private const double MinMapRefreshDistanceMeters = 20;
+    private static readonly TimeSpan MinMapRefreshInterval = TimeSpan.FromSeconds(5);
 
     private readonly AudioPlaybackService _audioService;
     private readonly LocalizationService _localizationService;
@@ -40,6 +42,8 @@ public partial class ExplorePage : ContentPage
     private Location? _currentLocation;
     private string _currentLocationDisplay = string.Empty;
     private readonly string _mapHtmlCachePath;
+    private DateTime _lastMapLocationRefreshAt = DateTime.MinValue;
+    private Location? _lastMapLocation;
 
     // Local category dictionary (không gọi API, không delay)
     private static readonly Dictionary<string, Dictionary<string, string>> CategoryTranslations = new(StringComparer.OrdinalIgnoreCase)
@@ -431,6 +435,77 @@ public partial class ExplorePage : ContentPage
         ApplyFilters();
     }
 
+    public void UpdateUserLocation(Location location)
+    {
+        _currentLocation = location;
+        _currentLocationDisplay = $"{location.Latitude:F5}, {location.Longitude:F5}";
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (FindByName("CurrentLocationValueLabel") is Label locationValueLabel)
+            {
+                locationValueLabel.Text = _currentLocationDisplay;
+            }
+
+            _ = UpdateUserMarkerOnMapAsync(location);
+        });
+    }
+
+    private async Task UpdateUserMarkerOnMapAsync(Location location)
+    {
+        var lat = location.Latitude.ToString(CultureInfo.InvariantCulture);
+        var lng = location.Longitude.ToString(CultureInfo.InvariantCulture);
+        var js = $"window.updateUserLocation && window.updateUserLocation({lat}, {lng}, false);";
+
+        await EvaluateMapJsAsync("TrackAsiaMapWebView", js);
+        await EvaluateMapJsAsync("TrackAsiaMapFullScreenWebView", js);
+    }
+
+    private async Task EvaluateMapJsAsync(string webViewName, string js)
+    {
+        var mapWebView = this.FindByName<WebView>(webViewName);
+        if (mapWebView is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await mapWebView.EvaluateJavaScriptAsync(js);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Explore Map JS] {ex.Message}");
+        }
+    }
+
+    private bool ShouldRefreshMapForLocation(Location current)
+    {
+        if (_lastMapLocation is null)
+        {
+            _lastMapLocation = current;
+            _lastMapLocationRefreshAt = DateTime.Now;
+            return true;
+        }
+
+        var elapsed = DateTime.Now - _lastMapLocationRefreshAt;
+        var moved = Location.CalculateDistance(
+            _lastMapLocation.Latitude,
+            _lastMapLocation.Longitude,
+            current.Latitude,
+            current.Longitude,
+            DistanceUnits.Kilometers) * 1000;
+
+        if (elapsed < MinMapRefreshInterval && moved < MinMapRefreshDistanceMeters)
+        {
+            return false;
+        }
+
+        _lastMapLocation = current;
+        _lastMapLocationRefreshAt = DateTime.Now;
+        return true;
+    }
+
     private void ApplyFilters()
     {
         IEnumerable<Restaurant> query = _allRestaurants;
@@ -629,11 +704,37 @@ public partial class ExplorePage : ContentPage
     const userLat = __USER_LAT__;
     const userLng = __USER_LNG__;
 
+    let mapInstance = null;
+    let userMarker = null;
+
     function getMapSdk() {
       if (window.trackasia && window.trackasia.Map) return window.trackasia;
       if (window.maplibregl && window.maplibregl.Map) return window.maplibregl;
       return null;
     }
+
+    function updateUserLocation(lat, lng, shouldCenter) {
+      const sdk = getMapSdk();
+      if (!sdk || !mapInstance || typeof lat !== 'number' || typeof lng !== 'number') {
+        return false;
+      }
+
+      if (!userMarker) {
+        userMarker = new sdk.Marker({ color: '#2E86DE' })
+          .setLngLat([lng, lat])
+          .addTo(mapInstance);
+      } else {
+        userMarker.setLngLat([lng, lat]);
+      }
+
+      if (shouldCenter === true) {
+        mapInstance.easeTo({ center: [lng, lat], duration: 600 });
+      }
+
+      return true;
+    }
+
+    window.updateUserLocation = updateUserLocation;
 
     function initMap() {
       const sdk = getMapSdk();
@@ -642,7 +743,7 @@ public partial class ExplorePage : ContentPage
         return;
       }
 
-      const map = new sdk.Map({
+      mapInstance = new sdk.Map({
         container: 'map',
         style: 'https://maps.track-asia.com/styles/v1/streets.json?key=' + apiKey,
         center: [__CENTER_LNG__, __CENTER_LAT__],
@@ -650,13 +751,11 @@ public partial class ExplorePage : ContentPage
       });
 
       if (sdk.NavigationControl) {
-        map.addControl(new sdk.NavigationControl(), 'top-right');
+        mapInstance.addControl(new sdk.NavigationControl(), 'top-right');
       }
 
       if (typeof userLat === 'number' && typeof userLng === 'number') {
-        new sdk.Marker({ color: '#2E86DE' })
-          .setLngLat([userLng, userLat])
-          .addTo(map);
+        updateUserLocation(userLat, userLng, false);
       }
 
       restaurants.forEach(r => {
@@ -672,7 +771,7 @@ public partial class ExplorePage : ContentPage
         new sdk.Marker({ color: '#FF6B35' })
           .setLngLat([r.longitude, r.latitude])
           .setPopup(popup)
-          .addTo(map);
+          .addTo(mapInstance);
       });
     }
 
