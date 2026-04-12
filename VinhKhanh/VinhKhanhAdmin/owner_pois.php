@@ -14,11 +14,23 @@ $errorMsg = '';
 
 // Handle Delete (soft delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
-    $idToDel = intval($_POST['id']);
+    $idToDel = $_POST['id'];
     if ($idToDel) {
+        $poiCheckSub = $fb->get('vinhkhanh/poi_submissions/' . $idToDel);
         $poiCheck = $fb->get('vinhkhanh/pois/' . $idToDel);
+        
+        $deleted = false;
+        
+        if ($poiCheckSub && isset($poiCheckSub['OwnerId']) && $poiCheckSub['OwnerId'] == $userId) {
+            $fb->update('vinhkhanh/poi_submissions/' . $idToDel, ['IsActive' => 0]);
+            $deleted = true;
+        }
         if ($poiCheck && isset($poiCheck['OwnerId']) && $poiCheck['OwnerId'] == $userId) {
             $fb->update('vinhkhanh/pois/' . $idToDel, ['IsActive' => 0]);
+            $deleted = true;
+        }
+        
+        if ($deleted) {
             $successMsg = "Đã ẩn POI thành công!";
         } else {
             $errorMsg = "Lỗi: Không tìm thấy POI hoặc bạn không có quyền xóa.";
@@ -27,12 +39,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 $fbData = $fb->get('vinhkhanh/pois');
+$fbSubmissions = $fb->get('vinhkhanh/poi_submissions');
 $myPois = [];
 
 if (is_array($fbData)) {
     foreach ($fbData as $id => $poi) {
         if ($poi && isset($poi['OwnerId']) && $poi['OwnerId'] == $userId) {
             $poi['id'] = $id;
+            // Only add if not exist in submissions (so submissions take precedence for edit display)
+            if (!isset($fbSubmissions[$id])) {
+                $myPois[] = $poi;
+            }
+        }
+    }
+}
+
+if (is_array($fbSubmissions)) {
+    foreach ($fbSubmissions as $id => $poi) {
+        if ($poi && isset($poi['OwnerId']) && $poi['OwnerId'] == $userId) {
+            $poi['id'] = $id;
+            $poi['IsActive'] = 2; // Always pending for submissions
             $myPois[] = $poi;
         }
     }

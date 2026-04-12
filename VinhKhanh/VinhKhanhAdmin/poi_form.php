@@ -16,10 +16,13 @@ $owners = array_filter($allUsers, function($u) {
     return $u && isset($u['Role']) && $u['Role'] == 2;
 });
 
-$id = isset($_GET['id']) ? intval($_GET['id']) : null;
+$id = isset($_GET['id']) ? $_GET['id'] : null;
 $poi = null;
 if ($id) {
-    $poi = $fb->get('vinhkhanh/pois/' . $id);
+    $poi = $fb->get('vinhkhanh/poi_submissions/' . $id);
+    if (!$poi) {
+        $poi = $fb->get('vinhkhanh/pois/' . $id);
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -90,6 +93,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     $fb->set('vinhkhanh/pois/' . $saveId, $newPoi);
+    
+    // Always delete from submissions after admin saves to avoid duplicating state
+    if ($id) {
+        $fb->delete('vinhkhanh/poi_submissions/' . $id);
+    }
+    
     header("Location: pois.php");
     exit;
 }

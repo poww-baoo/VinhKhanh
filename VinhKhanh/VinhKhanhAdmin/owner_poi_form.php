@@ -12,10 +12,13 @@ $fb = new FirebaseRTDB();
 
 $categories = $fb->get('vinhkhanh/categories') ?: [];
 
-$id = isset($_GET['id']) ? intval($_GET['id']) : null;
+$id = isset($_GET['id']) ? $_GET['id'] : null;
 $poi = null;
 if ($id) {
-    $poi = $fb->get('vinhkhanh/pois/' . $id);
+    $poi = $fb->get('vinhkhanh/poi_submissions/' . $id);
+    if (!$poi) {
+        $poi = $fb->get('vinhkhanh/pois/' . $id);
+    }
     if (!$poi || !isset($poi['OwnerId']) || $poi['OwnerId'] != $_SESSION['user_id']) {
         http_response_code(403);
         die('Forbidden: Bạn không có quyền chỉnh sửa POI này.');
@@ -24,8 +27,7 @@ if ($id) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$id) {
-        $lastPoi = $fb->get('vinhkhanh/pois', ['orderBy' => '"$key"', 'limitToLast' => 1]);
-        $saveId = empty($lastPoi) ? 1 : max(array_keys($lastPoi)) + 1;
+        $saveId = time(); // Use timestamp as ID for new submissions to avoid collision
         
         $priority = 3;
         $radiusMeters = 20;
@@ -36,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Keep existing values or defaults for edits since owners can't edit these fields
         $priority = $poi['Priority'] ?? 3;
         $radiusMeters = $poi['RadiusMeters'] ?? 20;
-        $isActive = $poi['IsActive'] ?? 2;
+        $isActive = 2; // It goes back to pending
     }
     
     $imageUrl = $poi['ImageUrl'] ?? null;
@@ -97,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'AdrZh' => $_POST['AdrZh'] ?? ''
     ];
 
-    $fb->set('vinhkhanh/pois/' . $saveId, $newPoi);
+    $fb->set('vinhkhanh/poi_submissions/' . $saveId, $newPoi);
     header("Location: owner_poi_detail.php?id=" . $saveId);
     exit;
 }

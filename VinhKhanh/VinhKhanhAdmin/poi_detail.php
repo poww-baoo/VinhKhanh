@@ -9,13 +9,16 @@ require_once __DIR__ . '/includes/firebase.php';
 
 $fb = new FirebaseRTDB();
 
-$id = isset($_GET['id']) ? intval($_GET['id']) : null;
+$id = isset($_GET['id']) ? $_GET['id'] : null;
 if (!$id) {
     header('Location: pois.php');
     exit;
 }
 
-$poi = $fb->get('vinhkhanh/pois/' . $id);
+$poi = $fb->get('vinhkhanh/poi_submissions/' . $id);
+if (!$poi) {
+    $poi = $fb->get('vinhkhanh/pois/' . $id);
+}
 
 if (!$poi) {
     http_response_code(404);

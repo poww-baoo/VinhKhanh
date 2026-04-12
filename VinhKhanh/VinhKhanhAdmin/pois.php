@@ -9,22 +9,47 @@ require_once __DIR__ . '/includes/firebase.php';
 
 $fb = new FirebaseRTDB();
 
-$pois = $fb->get('vinhkhanh/pois') ?: [];
+$poisApproved = $fb->get('vinhkhanh/pois') ?: [];
+$poisPending = $fb->get('vinhkhanh/poi_submissions') ?: [];
 $categories = $fb->get('vinhkhanh/categories') ?: [];
+
+$pois = [];
+foreach ($poisApproved as $id => $poi) {
+    if (!$poi) continue;
+    $poi['IsSubmission'] = false;
+    $pois[$id] = $poi;
+}
+foreach ($poisPending as $id => $poi) {
+    if (!$poi) continue;
+    $poi['IsSubmission'] = true;
+    $poi['IsActive'] = 2; // Always pending
+    $pois[$id] = $poi;
+}
 
 $filterCategory = isset($_GET['category']) && $_GET['category'] !== '' ? intval($_GET['category']) : '';
 $filterActive = isset($_GET['active']) && $_GET['active'] !== '' ? intval($_GET['active']) : '';
 
 // Handle Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $id = intval($_POST['id']);
+    $id = $_POST['id'];
     if (isset($pois[$id])) {
         if ($_POST['action'] === 'toggle') {
-            $pois[$id]['IsActive'] = $pois[$id]['IsActive'] == 1 ? 0 : 1;
-            $fb->update('vinhkhanh/pois/' . $id, ['IsActive' => $pois[$id]['IsActive']]);
+            if (!$pois[$id]['IsSubmission']) {
+                $pois[$id]['IsActive'] = $pois[$id]['IsActive'] == 1 ? 0 : 1;
+                $fb->update('vinhkhanh/pois/' . $id, ['IsActive' => $pois[$id]['IsActive']]);
+            }
         } elseif ($_POST['action'] === 'approve') {
-            $pois[$id]['IsActive'] = 1;
-            $fb->update('vinhkhanh/pois/' . $id, ['IsActive' => 1]);
+            if ($pois[$id]['IsSubmission']) {
+                $approvedPoi = $poisPending[$id];
+                $approvedPoi['IsActive'] = 1;
+                unset($approvedPoi['IsSubmission']); // Ensure this key is not saved
+                
+                $fb->set('vinhkhanh/pois/' . $id, $approvedPoi);
+                $fb->delete('vinhkhanh/poi_submissions/' . $id);
+            } else {
+                $pois[$id]['IsActive'] = 1;
+                $fb->update('vinhkhanh/pois/' . $id, ['IsActive' => 1]);
+            }
         }
     }
     header("Location: pois.php");
