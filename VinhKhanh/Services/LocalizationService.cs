@@ -113,6 +113,7 @@ namespace VinhKhanh.Services
                     { "Ja", "日本語" },
                     { "Ru", "Русский" },
                     { "Fr", "Français" },
+                    { "SelectLanguage", "Chọn ngôn ngữ" },
                 }
             },
             {
@@ -214,6 +215,7 @@ namespace VinhKhanh.Services
                     { "Ja", "Japanese" },
                     { "Ru", "Russian" },
                     { "Fr", "French" },
+                    { "SelectLanguage", "Select language" },
                 }
             },
             {
@@ -296,7 +298,12 @@ namespace VinhKhanh.Services
                     { "NoMenuData", "暂无菜单数据" },
                     { "PlaybackControls", "播放控制" },
                     { "ListenStoryButton", "🔊 收听故事" },
-                    { "Fr", "法语" },
+                    { "SelectLanguage", "选择语言" },
+                    { "Notifications", "🔔 通知" },
+                    { "NotificationDesc", "当您靠近餐厅时接收通知" },
+                    { "About", "ℹ️ 关于" },
+                    { "AppName", "永庆街头美食" },
+                    { "Version", "版本：1.0.0" },
                 }
             },
             {
@@ -379,6 +386,7 @@ namespace VinhKhanh.Services
                     { "NoMenuData", "メニューデータがありません" },
                     { "PlaybackControls", "再生コントロール" },
                     { "ListenStoryButton", "🔊 ストーリーを聞く" },
+                    { "SelectLanguage", "言語を選択" },
                 }
             },
             {
@@ -461,6 +469,7 @@ namespace VinhKhanh.Services
                     { "NoMenuData", "Нет данных меню" },
                     { "PlaybackControls", "Управление воспроизведением" },
                     { "ListenStoryButton", "🔊 Слушать историю" },
+                    { "SelectLanguage", "Выберите язык" },
                 }
             },
             {
@@ -543,6 +552,7 @@ namespace VinhKhanh.Services
                     { "NoMenuData", "Aucune donnée de menu" },
                     { "PlaybackControls", "Contrôles de lecture" },
                     { "ListenStoryButton", "🔊 Écouter l'histoire" },
+                    { "SelectLanguage", "Choisir la langue" },
                 }
             }
         };

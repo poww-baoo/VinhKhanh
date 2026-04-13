@@ -13,6 +13,73 @@ namespace VinhKhanh.Pages
         private readonly AudioPlaybackService _audioService;
         private readonly List<Restaurant> _savedRestaurants = new();
 
+        private const string BaseCategoryLanguage = "vi";
+        private readonly Dictionary<int, string> _sourceCategoryNames = new();
+
+        private static readonly Dictionary<string, Dictionary<string, string>> CategoryTranslations = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new(StringComparer.OrdinalIgnoreCase)
+            {
+                [NormalizeCategoryKey("Tất cả")] = "All",
+                [NormalizeCategoryKey("Món nước")] = "Soup/Noodle",
+                [NormalizeCategoryKey("Món khô")] = "Dry dishes",
+                [NormalizeCategoryKey("Ăn vặt")] = "Snacks",
+                [NormalizeCategoryKey("Ăn Vặt - Nước")] = "Snacks & Drinks",
+                [NormalizeCategoryKey("Đồ uống")] = "Drinks",
+                [NormalizeCategoryKey("Tráng miệng")] = "Desserts",
+                [NormalizeCategoryKey("Lẩu - Nướng")] = "Hotpot & Grill",
+                [NormalizeCategoryKey("Ốc - Hải sản")] = "Snails & Seafood",
+            },
+            ["zh"] = new(StringComparer.OrdinalIgnoreCase)
+            {
+                [NormalizeCategoryKey("Tất cả")] = "全部",
+                [NormalizeCategoryKey("Món nước")] = "汤/粉面",
+                [NormalizeCategoryKey("Món khô")] = "干拌类",
+                [NormalizeCategoryKey("Ăn vặt")] = "小吃",
+                [NormalizeCategoryKey("Ăn Vặt - Nước")] = "小吃与饮品",
+                [NormalizeCategoryKey("Đồ uống")] = "饮品",
+                [NormalizeCategoryKey("Tráng miệng")] = "甜点",
+                [NormalizeCategoryKey("Lẩu - Nướng")] = "火锅与烧烤",
+                [NormalizeCategoryKey("Ốc - Hải sản")] = "螺类与海鲜",
+            },
+            ["ja"] = new(StringComparer.OrdinalIgnoreCase)
+            {
+                [NormalizeCategoryKey("Tất cả")] = "すべて",
+                [NormalizeCategoryKey("Món nước")] = "汁物・麺",
+                [NormalizeCategoryKey("Món khô")] = "ドライ料理",
+                [NormalizeCategoryKey("Ăn vặt")] = "軽食",
+                [NormalizeCategoryKey("Ăn Vặt - Nước")] = "軽食・ドリンク",
+                [NormalizeCategoryKey("Đồ uống")] = "ドリンク",
+                [NormalizeCategoryKey("Tráng miệng")] = "デザート",
+                [NormalizeCategoryKey("Lẩu - Nướng")] = "鍋・焼き物",
+                [NormalizeCategoryKey("Ốc - Hải sản")] = "巻貝・シーフード",
+            },
+            ["ru"] = new(StringComparer.OrdinalIgnoreCase)
+            {
+                [NormalizeCategoryKey("Tất cả")] = "Все",
+                [NormalizeCategoryKey("Món nước")] = "Супы и лапша",
+                [NormalizeCategoryKey("Món khô")] = "Сухие блюда",
+                [NormalizeCategoryKey("Ăn vặt")] = "Закуски",
+                [NormalizeCategoryKey("Ăn Vặt - Nước")] = "Закуски и напитки",
+                [NormalizeCategoryKey("Đồ uống")] = "Напитки",
+                [NormalizeCategoryKey("Tráng miệng")] = "Десерты",
+                [NormalizeCategoryKey("Lẩu - Нướng")] = "Хотпот и гриль",
+                [NormalizeCategoryKey("Ốc - Hải sản")] = "Улитки и морепродукты",
+            },
+            ["fr"] = new(StringComparer.OrdinalIgnoreCase)
+            {
+                [NormalizeCategoryKey("Tất cả")] = "Tous",
+                [NormalizeCategoryKey("Món nước")] = "Soupes et nouilles",
+                [NormalizeCategoryKey("Món khô")] = "Plats secs",
+                [NormalizeCategoryKey("Ăn vặt")] = "Snacks",
+                [NormalizeCategoryKey("Ăn Vặt - Nước")] = "Snacks et boissons",
+                [NormalizeCategoryKey("Đồ uống")] = "Boissons",
+                [NormalizeCategoryKey("Tráng miệng")] = "Desserts",
+                [NormalizeCategoryKey("Lẩu - Nướng")] = "Fondue et grillades",
+                [NormalizeCategoryKey("Ốc - Hải sản")] = "Escargots et fruits de mer",
+            }
+        };
+
         public SavedPage()
         {
             InitializeComponent();
@@ -63,10 +130,15 @@ namespace VinhKhanh.Pages
 
         private void ApplyRestaurantLocalization()
         {
-            var language = _localizationService.CurrentLanguage;
+            var language = NormalizeLanguageCode(_localizationService.CurrentLanguage);
 
             foreach (var restaurant in _savedRestaurants)
             {
+                if (_sourceCategoryNames.TryGetValue(restaurant.CategoryId, out var sourceCategoryName))
+                {
+                    restaurant.CategoryName = GetLocalizedCategoryName(sourceCategoryName, language);
+                }
+
                 var localizedAddress = restaurant.GetAddressByLanguage(language);
                 restaurant.DisplayAddress = string.IsNullOrWhiteSpace(localizedAddress)
                     ? restaurant.Address
@@ -134,7 +206,9 @@ namespace VinhKhanh.Pages
                             {
                                 Id = poi.Id.ToString(),
                                 CategoryId = poi.CategoryId,
-                                CategoryName = poi.CategoryName,
+                                CategoryName = _sourceCategoryNames.TryGetValue(poi.CategoryId, out var sourceCategoryName)
+    ? sourceCategoryName
+    : poi.CategoryName,
                                 Name = poi.Name,
                                 YearEstablished = poi.YearEstablished,
                                 History = poi.History,
@@ -184,6 +258,13 @@ namespace VinhKhanh.Pages
                         $"{_localizationService.GetString("CannotLoadData", language)}: {ex.Message}",
                         _localizationService.GetString("OK", language));
                 });
+            }
+
+            var categories = await _databaseService.GetCategoriesAsync();
+            _sourceCategoryNames.Clear();
+            foreach (var category in categories)
+            {
+                _sourceCategoryNames[category.Id] = category.Name;
             }
         }
 
@@ -258,6 +339,62 @@ namespace VinhKhanh.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"[SavedPage Remove] {ex.Message}");
             }
+        }
+
+        private static string NormalizeLanguageCode(string? language)
+        {
+            var normalized = (language ?? BaseCategoryLanguage).Trim().ToLowerInvariant();
+            return normalized switch
+            {
+                "jp" => "ja",
+                _ => normalized
+            };
+        }
+
+        private string GetLocalizedCategoryName(string sourceName, string language)
+        {
+            var normalizedLang = NormalizeLanguageCode(language);
+            if (normalizedLang == BaseCategoryLanguage)
+            {
+                return sourceName;
+            }
+
+            var normalizedKey = NormalizeCategoryKey(sourceName);
+
+            if (CategoryTranslations.TryGetValue(normalizedLang, out var map) &&
+                map.TryGetValue(normalizedKey, out var translated) &&
+                !string.IsNullOrWhiteSpace(translated))
+            {
+                return translated;
+            }
+
+            return sourceName;
+        }
+
+        private static string NormalizeCategoryKey(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var normalized = value
+                .Trim()
+                .Replace('\t', ' ')
+                .Replace("–", "-")
+                .Replace("—", "-")
+                .Replace("/", "-")
+                .Replace(" - ", "-")
+                .Replace("- ", "-")
+                .Replace(" -", "-")
+                .ToLowerInvariant();
+
+            while (normalized.Contains("  ", StringComparison.Ordinal))
+            {
+                normalized = normalized.Replace("  ", " ");
+            }
+
+            return normalized;
         }
     }
 }

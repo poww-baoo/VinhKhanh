@@ -62,8 +62,11 @@ namespace VinhKhanh.Pages
             Title = _localizationService.GetString("Settings", language);
             HeaderLabel.Text = $"⚙️ {_localizationService.GetString("Settings", language)}";
             LanguageLabel.Text = _localizationService.GetString("Language", language);
+            LanguagePicker.Title = _localizationService.GetString("SelectLanguage", language);
+
             NotificationsLabel.Text = _localizationService.GetString("Notifications", language);
             NotificationDescLabel.Text = _localizationService.GetString("NotificationDesc", language);
+
             AboutLabel.Text = _localizationService.GetString("About", language);
             AppNameLabel.Text = _localizationService.GetString("AppName", language);
             VersionLabel.Text = _localizationService.GetString("Version", language);
